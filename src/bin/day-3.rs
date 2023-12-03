@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use advent_of_code_2023_solutions::Solution;
 
 fn main() {
@@ -9,6 +11,7 @@ struct Day3 {}
 impl Solution for Day3 {
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> u32 {
         let matrix: Vec2d<char> = Vec2d::from_lines(lines);
+        unimplemented!()
     }
 }
 
@@ -20,7 +23,6 @@ struct Vec2d<T> {
 #[derive(Debug, Copy)]
 struct Cell<'a, T> {
     parent: &'a Vec2d<T>,
-    value: &'a T,
     row: usize,
     col: usize,
 }
@@ -29,7 +31,6 @@ impl<'a, T> Clone for Cell<'a, T> {
     fn clone(&self) -> Self {
         Cell {
             parent: self.parent,
-            value: self.value,
             row: self.row,
             col: self.col,
         }
@@ -44,9 +45,13 @@ impl<'a, T> PartialEq for Cell<'a, T> {
 impl<'a, T> Eq for Cell<'a, T> {}
 
 /// Represents a contiguous set of cells within a specific row
+/// It is guaranteed that the row value of these cells is the same
+#[derive(Eq, PartialEq, Debug)]
 struct CellRowRange<'a, T> {
-    first: Cell<'a, T>,
-    last: Cell<'a, T>,
+    parent: &'a Vec2d<T>,
+    row: usize,
+    first_col: usize,
+    last_col: usize,
 }
 
 impl<T> Vec2d<T> {
@@ -57,7 +62,6 @@ impl<T> Vec2d<T> {
     pub fn get_cell(&self, row: usize, col: usize) -> Option<Cell<T>> {
         self.get(row, col).map(|value| Cell {
             parent: &self,
-            value,
             row,
             col,
         })
@@ -71,7 +75,6 @@ impl<T> Vec2d<T> {
                 let row = row.clone();
                 row_val.iter().enumerate().map(move |(col, value)| Cell {
                     parent: &self,
-                    value,
                     row,
                     col,
                 })
@@ -89,7 +92,7 @@ impl Vec2d<char> {
 
 impl<T> Cell<'_, T> {
     pub fn value(&self) -> &T {
-        self.value
+        &self.parent.inner[self.row][self.col]
     }
 
     pub fn neighbors(&self) -> impl Iterator<Item = Cell<T>> {
@@ -111,5 +114,48 @@ impl<T> Cell<'_, T> {
 
     pub fn next_col(&self) -> Option<Cell<T>> {
         self.parent.get_cell(self.row, self.col + 1)
+    }
+}
+
+fn is_symbol(c: &char) -> bool {
+    !c.is_alphabetic() && *c != '.'
+}
+
+impl<'a, T> CellRowRange<'a, T> {
+    pub fn cells(&self) -> impl Iterator<Item = Cell<T>> {
+        (self.first_col..=self.last_col).into_iter().map(|col| {
+            self.parent
+                .get_cell(self.row, col)
+                .ok_or_else(|| anyhow::Error::msg("Invalid row range"))
+                .unwrap()
+        })
+    }
+
+    pub fn first(&self) -> Cell<T> {
+        Cell {
+            parent: self.parent,
+            row: self.row,
+            col: self.first_col,
+        }
+    }
+
+    pub fn last(&self) -> Cell<T> {
+        Cell {
+            parent: self.parent,
+            row: self.row,
+            col: self.last_col,
+        }
+    }
+
+    pub fn as_slice(&self) -> &[T] {
+        &self.parent.inner[self.row].as_slice()[self.first_col..=self.last_col]
+    }
+}
+
+impl<'a> Display for CellRowRange<'a, char> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let parent = self.parent;
+        let row = self.row;
+        write!(f, "{}", self.as_slice().iter().collect::<String>())
     }
 }
