@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::fmt::{Display, Write};
 
 use advent_of_code_2023_solutions::Solution;
 
@@ -11,8 +11,16 @@ struct Day3 {}
 impl Solution for Day3 {
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> u32 {
         let matrix: Vec2d<char> = Vec2d::from_lines(lines);
-        unimplemented!()
+        get_values(&matrix).sum()
     }
+}
+
+fn get_values<'a>(matrix: &'a Vec2d<char>) -> impl Iterator<Item = u32> + 'a {
+    get_numeric_ranges(matrix)
+        .into_iter()
+        .filter(|range| borders_symbol(range))
+        .map(|range| range.to_string())
+        .map(|s| s.parse::<u32>().unwrap())
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -96,19 +104,30 @@ impl<T> Cell<'_, T> {
     }
 
     pub fn neighbors(&self) -> impl Iterator<Item = Cell<T>> {
+        let row = self.row as i32;
+        let col = self.col as i32;
         let neighbor_indices = [
-            (self.row - 1, self.col - 1),
-            (self.row, self.col - 1),
-            (self.row + 1, self.col - 1),
-            (self.row - 1, self.col),
-            (self.row + 1, self.col),
-            (self.row - 1, self.col + 1),
-            (self.row, self.col + 1),
-            (self.row + 1, self.col + 1),
+            (row - 1, col - 1),
+            (row, col - 1),
+            (row + 1, col - 1),
+            (row - 1, col),
+            (row + 1, col),
+            (row - 1, col + 1),
+            (row, col + 1),
+            (row + 1, col + 1),
         ];
 
         neighbor_indices
             .into_iter()
+            .filter_map(|(row, col)| {
+                let row = usize::try_from(row);
+                let col = usize::try_from(col);
+
+                match (row, col) {
+                    (Ok(row), Ok(col)) => Some((row, col)),
+                    _ => None,
+                }
+            })
             .filter_map(|(row, col)| self.parent.get_cell(row, col))
     }
 
@@ -118,7 +137,7 @@ impl<T> Cell<'_, T> {
 }
 
 fn is_symbol(c: &char) -> bool {
-    !c.is_alphabetic() && *c != '.'
+    !c.is_alphanumeric() && *c != '.'
 }
 
 impl<'a, T> CellRowRange<'a, T> {
@@ -154,8 +173,87 @@ impl<'a, T> CellRowRange<'a, T> {
 
 impl<'a> Display for CellRowRange<'a, char> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let parent = self.parent;
-        let row = self.row;
-        write!(f, "{}", self.as_slice().iter().collect::<String>())
+        for c in self.as_slice() {
+            f.write_char(*c)?
+        }
+        Ok(())
+    }
+}
+
+fn borders_symbol(range: &CellRowRange<char>) -> bool {
+    for cell in range.cells() {
+        for neighbor in cell.neighbors() {
+            if is_symbol(neighbor.value()) {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+fn get_numeric_ranges<'a>(matrix: &'a Vec2d<char>) -> Vec<CellRowRange<'a, char>> {
+    let mut ranges = Vec::new();
+
+    for (row, row_vec) in matrix.inner.iter().enumerate() {
+        let mut start: Option<usize> = None;
+        for (col, val) in row_vec.iter().enumerate() {
+            if val.is_ascii_digit() {
+                match start {
+                    None => start = Some(col),
+                    Some(_) => {}
+                }
+            } else {
+                match start {
+                    None => {}
+                    Some(first_col) => {
+                        ranges.push(CellRowRange {
+                            parent: &matrix,
+                            row,
+                            first_col,
+                            last_col: col - 1,
+                        });
+                        start = None
+                    }
+                }
+            }
+        }
+    }
+    ranges
+}
+
+#[cfg(test)]
+mod test {
+    use crate::*;
+
+    #[test]
+    fn test_example() {
+        let input = r#"467..114..
+...*......
+..35..633.
+......#...
+617*......
+.....+.58.
+..592.....
+......755.
+...$.*....
+.664.598.."#;
+        assert_eq!(Day3::solve(input.lines()), 4361)
+    }
+
+    #[test]
+    fn test_get_values() {
+        let input = r#"467..114..
+...*......
+..35..633.
+......#...
+617*......
+.....+.58.
+..592.....
+......755.
+...$.*....
+.664.598.."#;
+        let matrix: Vec2d<char> = Vec2d::from_lines(input.lines());
+        let values: Vec<u32> = get_values(&matrix).collect();
+        assert_eq!(values, vec![467, 35, 633, 617, 592, 755, 664, 598]);
     }
 }
