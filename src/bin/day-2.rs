@@ -2,7 +2,7 @@ use advent_of_code_2023_solutions::{get_input_lines, Solution};
 use std::str::FromStr;
 
 fn main() {
-    println!("{}", Day2::solve(get_input_lines()));
+    Day2::default_print_solution();
 }
 struct Day2 {}
 impl Solution for Day2 {

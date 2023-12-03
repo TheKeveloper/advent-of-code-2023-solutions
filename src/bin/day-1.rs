@@ -1,7 +1,7 @@
 use advent_of_code_2023_solutions::{get_input_lines, Solution};
 
 fn main() {
-    println!("{}", Day1::solve(get_input_lines()));
+    Day1::default_print_solution();
 }
 struct Day1 {}
 
