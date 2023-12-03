@@ -18,3 +18,7 @@ pub fn get_input_lines() -> impl Iterator<Item = String> {
         .lines()
         .map(|result| result.expect("Could not read line from input file"))
 }
+
+pub trait Solution {
+    fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> u32;
+}

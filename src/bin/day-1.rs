@@ -1,11 +1,14 @@
-use advent_of_code_2023_solutions::get_input_lines;
+use advent_of_code_2023_solutions::{get_input_lines, Solution};
 
 fn main() {
-    println!("{}", solve(get_input_lines()));
+    println!("{}", Day1::solve(get_input_lines()));
 }
+struct Day1 {}
 
-fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> u32 {
-    lines.map(|line| get_number(line.as_ref())).sum()
+impl Solution for Day1 {
+    fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> u32 {
+        lines.map(|line| get_number(line.as_ref())).sum()
+    }
 }
 
 fn get_number(line: &str) -> u32 {

@@ -1,23 +1,25 @@
-use advent_of_code_2023_solutions::get_input_lines;
+use advent_of_code_2023_solutions::{get_input_lines, Solution};
 use std::str::FromStr;
 
 fn main() {
-    println!("{}", solve(get_input_lines()));
+    println!("{}", Day2::solve(get_input_lines()));
 }
-
-fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> u32 {
-    let mut sum: u32 = 0;
-    for line in lines {
-        let line = line.as_ref();
-        if line.is_empty() {
-            continue;
+struct Day2 {}
+impl Solution for Day2 {
+    fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> u32 {
+        let mut sum: u32 = 0;
+        for line in lines {
+            let line = line.as_ref();
+            if line.is_empty() {
+                continue;
+            }
+            let game: Game = line.parse().expect("Could not parse game");
+            if game.is_feasible() {
+                sum += game.index;
+            }
         }
-        let game: Game = line.parse().expect("Could not parse game");
-        if game.is_feasible() {
-            sum += game.index;
-        }
+        sum
     }
-    sum
 }
 
 #[derive(Debug)]
