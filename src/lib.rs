@@ -20,5 +20,9 @@ pub fn get_input_lines() -> impl Iterator<Item = String> {
 }
 
 pub trait Solution {
+    fn default_print_solution() {
+        println!("{}", Self::solve(get_input_lines()));
+    }
+
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> u32;
 }

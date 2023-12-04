@@ -1,7 +1,7 @@
-use advent_of_code_2023_solutions::{get_input_lines, Solution};
+use advent_of_code_2023_solutions::Solution;
 
 fn main() {
-    println!("{}", Day1::solve(get_input_lines()));
+    Day1::default_print_solution();
 }
 struct Day1 {}
 
@@ -29,7 +29,7 @@ fn get_number(line: &str) -> u32 {
 
 #[cfg(test)]
 mod test {
-    use crate::solve;
+    use crate::*;
 
     #[test]
     fn test_example() {
@@ -40,6 +40,6 @@ a1b2c3d4e5f
 treb7uchet
 "#;
 
-        assert_eq!(solve(input.lines()), 142);
+        assert_eq!(Day1::solve(input.lines()), 142);
     }
 }

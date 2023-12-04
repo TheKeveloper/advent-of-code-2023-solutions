@@ -1,8 +1,8 @@
-use advent_of_code_2023_solutions::{get_input_lines, Solution};
+use advent_of_code_2023_solutions::Solution;
 use std::str::FromStr;
 
 fn main() {
-    println!("{}", Day2::solve(get_input_lines()));
+    Day2::default_print_solution();
 }
 struct Day2 {}
 impl Solution for Day2 {
@@ -134,7 +134,7 @@ Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red
 Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
 Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green"#;
 
-        assert_eq!(solve(input.lines()), 8);
+        assert_eq!(Day2::solve(input.lines()), 8);
     }
 
     #[test]
