@@ -1,10 +1,8 @@
-use advent_of_code_2023_solutions::Solution;
 use std::str::FromStr;
 
-fn main() {
-    Day2::default_print_solution();
-}
-struct Day2 {}
+use crate::common::Solution;
+
+pub enum Day2 {}
 impl Solution for Day2 {
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> u32 {
         let mut sum: u32 = 0;
@@ -123,7 +121,7 @@ impl FromStr for CubeColor {
 
 #[cfg(test)]
 mod test {
-    use crate::*;
+    use crate::day2::*;
 
     #[test]
     fn test_example() {

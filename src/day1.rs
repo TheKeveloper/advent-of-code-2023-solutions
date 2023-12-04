@@ -1,9 +1,6 @@
-use advent_of_code_2023_solutions::Solution;
+use crate::common::Solution;
 
-fn main() {
-    Day1::default_print_solution();
-}
-struct Day1 {}
+pub enum Day1 {}
 
 impl Solution for Day1 {
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> u32 {
@@ -29,7 +26,8 @@ fn get_number(line: &str) -> u32 {
 
 #[cfg(test)]
 mod test {
-    use crate::*;
+    use crate::common::Solution;
+    use crate::day1::Day1;
 
     #[test]
     fn test_example() {

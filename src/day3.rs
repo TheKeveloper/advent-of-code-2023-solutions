@@ -2,13 +2,9 @@
 
 use std::fmt::{Display, Write};
 
-use advent_of_code_2023_solutions::Solution;
+use crate::common::Solution;
 
-fn main() {
-    Day3::default_print_solution()
-}
-
-struct Day3 {}
+pub enum Day3 {}
 
 impl Solution for Day3 {
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> u32 {
@@ -233,7 +229,7 @@ fn get_numeric_ranges(matrix: &Vec2d<char>) -> Vec<CellRowRange<'_, char>> {
 
 #[cfg(test)]
 mod test {
-    use crate::*;
+    use crate::day3::*;
 
     #[test]
     fn test_example() {
