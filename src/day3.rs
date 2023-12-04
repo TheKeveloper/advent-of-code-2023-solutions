@@ -4,9 +4,9 @@ use crate::vec2d::{CellRowRange, Vec2d};
 pub enum Day3 {}
 
 impl Solution for Day3 {
-    fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> u32 {
+    fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
         let matrix: Vec2d<char> = Vec2d::from_lines(lines);
-        get_values(&matrix).sum()
+        get_values(&matrix).sum::<u32>().to_string()
     }
 }
 

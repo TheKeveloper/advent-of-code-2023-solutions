@@ -4,7 +4,7 @@ use crate::common::Solution;
 
 pub enum Day2 {}
 impl Solution for Day2 {
-    fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> u32 {
+    fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
         let mut sum: u32 = 0;
         for line in lines {
             let line = line.as_ref();
@@ -16,7 +16,7 @@ impl Solution for Day2 {
                 sum += game.index;
             }
         }
-        sum
+        sum.to_string()
     }
 }
 
