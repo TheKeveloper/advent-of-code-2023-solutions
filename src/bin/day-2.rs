@@ -1,4 +1,4 @@
-use advent_of_code_2023_solutions::{get_input_lines, Solution};
+use advent_of_code_2023_solutions::{Solution};
 use std::str::FromStr;
 
 fn main() {

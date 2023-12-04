@@ -15,7 +15,7 @@ impl Solution for Day3 {
     }
 }
 
-fn get_values<'a>(matrix: &'a Vec2d<char>) -> impl Iterator<Item = u32> + 'a {
+fn get_values(matrix: &Vec2d<char>) -> impl Iterator<Item = u32> + '_ {
     get_numeric_ranges(matrix)
         .into_iter()
         .filter(|range| borders_symbol(range))
@@ -68,8 +68,8 @@ impl<T> Vec2d<T> {
     }
 
     pub fn get_cell(&self, row: usize, col: usize) -> Option<Cell<T>> {
-        self.get(row, col).map(|value| Cell {
-            parent: &self,
+        self.get(row, col).map(|_value| Cell {
+            parent: self,
             row,
             col,
         })
@@ -80,9 +80,8 @@ impl<T> Vec2d<T> {
             .iter()
             .enumerate()
             .flat_map(move |(row, row_val)| {
-                let row = row.clone();
-                row_val.iter().enumerate().map(move |(col, value)| Cell {
-                    parent: &self,
+                row_val.iter().enumerate().map(move |(col, _value)| Cell {
+                    parent: self,
                     row,
                     col,
                 })
@@ -142,7 +141,7 @@ fn is_symbol(c: &char) -> bool {
 
 impl<'a, T> CellRowRange<'a, T> {
     pub fn cells(&self) -> impl Iterator<Item = Cell<T>> {
-        (self.first_col..=self.last_col).into_iter().map(|col| {
+        (self.first_col..=self.last_col).map(|col| {
             self.parent
                 .get_cell(self.row, col)
                 .ok_or_else(|| anyhow::Error::msg("Invalid row range"))
@@ -191,7 +190,7 @@ fn borders_symbol(range: &CellRowRange<char>) -> bool {
     false
 }
 
-fn get_numeric_ranges<'a>(matrix: &'a Vec2d<char>) -> Vec<CellRowRange<'a, char>> {
+fn get_numeric_ranges(matrix: &Vec2d<char>) -> Vec<CellRowRange<'_, char>> {
     let mut ranges = Vec::new();
 
     for (row, row_vec) in matrix.inner.iter().enumerate() {
@@ -207,7 +206,7 @@ fn get_numeric_ranges<'a>(matrix: &'a Vec2d<char>) -> Vec<CellRowRange<'a, char>
                     None => {}
                     Some(first_col) => {
                         ranges.push(CellRowRange {
-                            parent: &matrix,
+                            parent: matrix,
                             row,
                             first_col,
                             last_col: col - 1,
@@ -220,7 +219,7 @@ fn get_numeric_ranges<'a>(matrix: &'a Vec2d<char>) -> Vec<CellRowRange<'a, char>
         match start {
             None => {}
             Some(first_col) => ranges.push(CellRowRange {
-                parent: &matrix,
+                parent: matrix,
                 row,
                 first_col,
                 last_col: row_vec.len() - 1,
