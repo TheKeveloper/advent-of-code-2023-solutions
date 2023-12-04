@@ -3,8 +3,11 @@ use crate::common::Solution;
 pub enum Day1 {}
 
 impl Solution for Day1 {
-    fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> u32 {
-        lines.map(|line| get_number(line.as_ref())).sum()
+    fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
+        lines
+            .map(|line| get_number(line.as_ref()))
+            .sum::<u32>()
+            .to_string()
     }
 }
 
@@ -38,6 +41,6 @@ a1b2c3d4e5f
 treb7uchet
 "#;
 
-        assert_eq!(Day1::solve(input.lines()), 142);
+        assert_eq!(Day1::solve(input.lines()), "142");
     }
 }
