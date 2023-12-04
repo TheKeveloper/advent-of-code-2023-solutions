@@ -78,7 +78,7 @@ mod test {
 ......755.
 ...$.*....
 .664.598.."#;
-        assert_eq!(Day3::solve(input.lines()), 4361)
+        assert_eq!(Day3::solve(input.lines()), "4361")
     }
 
     #[test]
