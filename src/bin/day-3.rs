@@ -137,7 +137,7 @@ impl<T> Cell<'_, T> {
 }
 
 fn is_symbol(c: &char) -> bool {
-    !c.is_alphanumeric() && *c != '.'
+    !c.is_numeric() && *c != '.'
 }
 
 impl<'a, T> CellRowRange<'a, T> {
@@ -216,6 +216,15 @@ fn get_numeric_ranges<'a>(matrix: &'a Vec2d<char>) -> Vec<CellRowRange<'a, char>
                     }
                 }
             }
+        }
+        match start {
+            None => {}
+            Some(first_col) => ranges.push(CellRowRange {
+                parent: &matrix,
+                row,
+                first_col,
+                last_col: row_vec.len() - 1,
+            }),
         }
     }
     ranges
