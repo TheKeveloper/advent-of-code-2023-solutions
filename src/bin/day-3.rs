@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::fmt::{Display, Write};
 
 use advent_of_code_2023_solutions::Solution;
