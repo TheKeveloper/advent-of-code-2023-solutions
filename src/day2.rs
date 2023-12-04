@@ -1,3 +1,4 @@
+use std::cmp::max;
 use std::str::FromStr;
 
 use crate::common::Solution;
@@ -17,6 +18,25 @@ impl Solution for Day2 {
             }
         }
         sum.to_string()
+    }
+}
+
+pub enum Day2P2 {}
+impl Solution for Day2P2 {
+    fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
+        lines
+            .map(|line| line.as_ref().to_string())
+            .filter(|s| !s.is_empty())
+            .map(|s| s.parse::<Game>().unwrap())
+            .map(|game| {
+                game.sets
+                    .into_iter()
+                    .reduce(|acc, s| Set::minimum_set(&acc, &s))
+                    .unwrap()
+            })
+            .map(|set| set.red * set.green * set.blue)
+            .sum::<u32>()
+            .to_string()
     }
 }
 
@@ -97,6 +117,15 @@ impl Set {
     pub fn is_feasible(&self) -> bool {
         self.red <= 12 && self.green <= 13 && self.blue <= 14
     }
+
+    /// Returns the minimum set that makes both sets possible
+    pub fn minimum_set(first: &Self, second: &Self) -> Set {
+        Set {
+            red: max(first.red, second.red),
+            green: max(first.green, second.green),
+            blue: max(first.blue, second.blue),
+        }
+    }
 }
 
 #[derive(Hash, Eq, PartialEq, Debug)]
@@ -153,5 +182,16 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green"#;
                 red: 20
             }
         );
+    }
+
+    #[test]
+    fn test_example_part2() {
+        let input = r#"Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
+Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
+Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red
+Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
+Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green"#;
+
+        assert_eq!(Day2P2::solve(input.lines()), "2286")
     }
 }
