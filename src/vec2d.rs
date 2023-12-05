@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::fmt::{Display, Write};
 
 #[derive(Debug, Eq, PartialEq)]
@@ -14,7 +15,7 @@ pub struct Cell<'a, T> {
 
 /// Represents a contiguous set of cells within a specific row
 /// It is guaranteed that the row value of these cells is the same
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Debug)]
 pub struct CellRowRange<'a, T> {
     parent: &'a Vec2d<T>,
     row: usize,
@@ -142,7 +143,7 @@ impl<T> Cell<'_, T> {
         return Cell {
             parent: self.parent,
             row: self.row,
-            col: self.parent.inner[self.row].len(),
+            col: self.parent.inner[self.row].len() - 1,
         };
     }
 
@@ -169,7 +170,7 @@ impl<T> Cell<'_, T> {
         P: Fn(&T) -> bool,
     {
         let row_vec = &self.parent.inner[self.row];
-        for i in (self.col + 1..row_vec.len()).rev() {
+        for i in self.col + 1..row_vec.len() {
             if predicate(&row_vec[i]) {
                 return self.parent.get_cell(self.row, i);
             }
@@ -216,6 +217,18 @@ impl<T> Cell<'_, T> {
     }
 }
 
+impl<'a, T> PartialOrd for Cell<'a, T> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if !std::ptr::eq(self.parent, other.parent) {
+            return None;
+        }
+        match self.row.cmp(&other.row) {
+            Ordering::Equal => Some(self.col.cmp(&other.col)),
+            ordering => Some(ordering),
+        }
+    }
+}
+
 impl<'a, T> CellRowRange<'a, T> {
     pub fn cells(&self) -> impl Iterator<Item = Cell<T>> {
         (self.first_col..=self.last_col).map(|col| {
@@ -244,5 +257,24 @@ impl<'a, T> CellRowRange<'a, T> {
 
     pub fn as_slice(&self) -> &[T] {
         &self.parent.inner[self.row].as_slice()[self.first_col..=self.last_col]
+    }
+}
+
+impl<'a, T> PartialEq for CellRowRange<'a, T> {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(self.parent, other.parent)
+            && self.row == other.row
+            && self.first_col == other.first_col
+            && self.last_col == other.last_col
+    }
+}
+
+impl<'a, T> Eq for CellRowRange<'a, T> {}
+
+impl<'a, T> PartialOrd for CellRowRange<'a, T> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.first()
+            .partial_cmp(&other.first())
+            .or_else(|| self.last().partial_cmp(&other.last()))
     }
 }
