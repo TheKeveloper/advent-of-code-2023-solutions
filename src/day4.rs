@@ -15,6 +15,29 @@ impl Solution for Day4 {
     }
 }
 
+pub enum Day4P2 {}
+
+impl Solution for Day4P2 {
+    fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
+        let scores: Vec<_> = lines
+            .map(|s| s.as_ref().parse::<Ticket>().unwrap())
+            .map(|ticket| ticket.winning_count())
+            .collect();
+
+        let mut copies = vec![1u64; scores.len()];
+        for (i, score) in scores.iter().enumerate() {
+            let copy_count = copies[i];
+            for j in i + 1..=i + score {
+                if let Some(val) = copies.get_mut(j) {
+                    *val += copy_count
+                }
+            }
+        }
+
+        copies.iter().sum::<u64>().to_string()
+    }
+}
+
 #[derive(Default)]
 struct Ticket {
     #[allow(dead_code)]
@@ -78,7 +101,7 @@ impl FromStr for Ticket {
 #[cfg(test)]
 mod test {
     use crate::common::Solution;
-    use crate::day4::Day4;
+    use crate::day4::{Day4, Day4P2};
 
     #[test]
     fn test_example() {
@@ -90,5 +113,17 @@ Card 5: 87 83 26 28 32 | 88 30 70 12 93 22 82 36
 Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11"#;
 
         assert_eq!(Day4::solve(input.lines()), "13")
+    }
+
+    #[test]
+    fn test_p2_example() {
+        let input = r#"Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53
+Card 2: 13 32 20 16 61 | 61 30 68 82 17 32 24 19
+Card 3:  1 21 53 59 44 | 69 82 63 72 16 21 14  1
+Card 4: 41 92 73 84 69 | 59 84 76 51 58  5 54 83
+Card 5: 87 83 26 28 32 | 88 30 70 12 93 22 82 36
+Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11"#;
+
+        assert_eq!(Day4P2::solve(input.lines()), "30");
     }
 }
