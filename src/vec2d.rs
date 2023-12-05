@@ -52,6 +52,10 @@ impl<T> Vec2d<T> {
         })
     }
 
+    pub fn get_row(&self, row: usize) -> Option<&[T]> {
+        self.inner.get(row).map(|row| row.as_slice())
+    }
+
     pub fn cells(&self) -> impl Iterator<Item = Cell<T>> {
         self.inner
             .iter()
@@ -124,6 +128,89 @@ impl<T> Cell<'_, T> {
             .filter_map(|(row, col)| self.parent.get_cell(row, col))
     }
 
+    /// find the first cell in the row of the current cell
+    pub fn first_cell_in_row(&self) -> Cell<T> {
+        return Cell {
+            parent: self.parent,
+            row: self.row,
+            col: 0,
+        };
+    }
+
+    /// return the last cell in the current row
+    pub fn last_cell_in_row(&self) -> Cell<T> {
+        return Cell {
+            parent: self.parent,
+            row: self.row,
+            col: self.parent.inner[self.row].len(),
+        };
+    }
+
+    /// returns the row of the current cell
+    pub fn get_row(&self) -> &[T] {
+        self.parent.inner[self.row].as_slice()
+    }
+
+    pub fn find_first_before<P>(&self, predicate: P) -> Option<Cell<T>>
+    where
+        P: Fn(&T) -> bool,
+    {
+        let row_vec = &self.parent.inner[self.row];
+        for i in (0..self.col).rev() {
+            if predicate(&row_vec[i]) {
+                return self.parent.get_cell(self.row, i);
+            }
+        }
+        None
+    }
+
+    pub fn find_first_after<P>(&self, predicate: P) -> Option<Cell<T>>
+    where
+        P: Fn(&T) -> bool,
+    {
+        let row_vec = &self.parent.inner[self.row];
+        for i in (self.col + 1..row_vec.len()).rev() {
+            if predicate(&row_vec[i]) {
+                return self.parent.get_cell(self.row, i);
+            }
+        }
+        None
+    }
+
+    /// Find the longest contiguous range of neighbors of this cell in the same row satisfying
+    /// the given predicate.
+    pub fn find_contiguous_satisfying<P>(&self, predicate: P) -> CellRowRange<T>
+    where
+        P: Fn(&T) -> bool,
+    {
+        let first_cell = self.find_first_before(|val| !predicate(val));
+        let first_cell = first_cell
+            .as_ref()
+            .map(|cell| cell.next_col())
+            .flatten()
+            .unwrap_or_else(|| self.first_cell_in_row());
+
+        let last_cell = self.find_first_after(|val| !predicate(val));
+        let last_cell = last_cell
+            .as_ref()
+            .and_then(|cell| cell.prev_col())
+            .unwrap_or_else(|| self.last_cell_in_row());
+
+        CellRowRange {
+            parent: self.parent,
+            row: self.row,
+            first_col: first_cell.col,
+            last_col: last_cell.col,
+        }
+    }
+
+    pub fn prev_col(&self) -> Option<Cell<T>> {
+        if self.col == 0 {
+            None
+        } else {
+            self.parent.get_cell(self.row, self.col - 1)
+        }
+    }
     pub fn next_col(&self) -> Option<Cell<T>> {
         self.parent.get_cell(self.row, self.col + 1)
     }
