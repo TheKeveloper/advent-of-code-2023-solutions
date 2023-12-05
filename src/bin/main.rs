@@ -7,7 +7,7 @@ use structopt::StructOpt;
 use advent_of_code_2023_solutions::common::Solution;
 use advent_of_code_2023_solutions::day1::{Day1, Day1P2};
 use advent_of_code_2023_solutions::day2::{Day2, Day2P2};
-use advent_of_code_2023_solutions::day3::Day3;
+use advent_of_code_2023_solutions::day3::{Day3, Day3P2};
 use advent_of_code_2023_solutions::day4::Day4;
 
 fn main() {
@@ -24,6 +24,7 @@ fn main() {
         (2, 1) => Day2::solve(lines),
         (2, 2) => Day2P2::solve(lines),
         (3, 1) => Day3::solve(lines),
+        (3, 2) => Day3P2::solve(lines),
         (4, 1) => Day4::solve(lines),
         _ => unimplemented!(),
     };

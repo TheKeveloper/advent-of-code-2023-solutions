@@ -1,5 +1,7 @@
+use std::cmp::Ordering;
+
 use crate::common::Solution;
-use crate::vec2d::{CellRowRange, Vec2d};
+use crate::vec2d::{Cell, CellRowRange, Vec2d};
 
 pub enum Day3 {}
 
@@ -7,6 +9,19 @@ impl Solution for Day3 {
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
         let matrix: Vec2d<char> = Vec2d::from_lines(lines);
         get_values(&matrix).sum::<u32>().to_string()
+    }
+}
+
+pub enum Day3P2 {}
+impl Solution for Day3P2 {
+    fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
+        let matrix: Vec2d<char> = Vec2d::from_lines(lines);
+
+        matrix
+            .cells()
+            .filter_map(|cell| get_gear_ratio(&cell))
+            .sum::<u32>()
+            .to_string()
     }
 }
 
@@ -62,6 +77,33 @@ fn get_numeric_ranges(matrix: &Vec2d<char>) -> Vec<CellRowRange<'_, char>> {
     ranges
 }
 
+fn get_gear_ratio(cell: &Cell<char>) -> Option<u32> {
+    if *cell.value() != '*' {
+        return None;
+    }
+
+    let neighbors: Vec<_> = cell.neighbors().collect();
+
+    let mut neighboring_numbers: Vec<CellRowRange<char>> = Vec::new();
+
+    // can't use iterators because the lifetimes there are weird...
+    for neighbor in neighbors.as_slice() {
+        if neighbor.value().is_ascii_digit() {
+            let number_range = neighbor.find_contiguous_satisfying(|c| c.is_ascii_digit());
+            neighboring_numbers.push(number_range);
+        }
+    }
+
+    neighboring_numbers.sort_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal));
+    neighboring_numbers.dedup();
+    match neighboring_numbers.as_slice() {
+        [first, second] => Some(
+            first.to_string().parse::<u32>().unwrap() * second.to_string().parse::<u32>().unwrap(),
+        ),
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::day3::*;
@@ -96,5 +138,20 @@ mod test {
         let matrix: Vec2d<char> = Vec2d::from_lines(input.lines());
         let values: Vec<u32> = get_values(&matrix).collect();
         assert_eq!(values, vec![467, 35, 633, 617, 592, 755, 664, 598]);
+    }
+
+    #[test]
+    fn test_part2_example() {
+        let input = r#"467..114..
+...*......
+..35..633.
+......#...
+617*......
+.....+.58.
+..592.....
+......755.
+...$.*....
+.664.598.."#;
+        assert_eq!(Day3P2::solve(input.lines()), "467835");
     }
 }

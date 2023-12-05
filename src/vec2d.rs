@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::fmt::{Display, Write};
 
 #[derive(Debug, Eq, PartialEq)]
@@ -14,7 +15,7 @@ pub struct Cell<'a, T> {
 
 /// Represents a contiguous set of cells within a specific row
 /// It is guaranteed that the row value of these cells is the same
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Debug)]
 pub struct CellRowRange<'a, T> {
     parent: &'a Vec2d<T>,
     row: usize,
@@ -50,6 +51,10 @@ impl<T> Vec2d<T> {
             row,
             col,
         })
+    }
+
+    pub fn get_row(&self, row: usize) -> Option<&[T]> {
+        self.inner.get(row).map(|row| row.as_slice())
     }
 
     pub fn cells(&self) -> impl Iterator<Item = Cell<T>> {
@@ -124,8 +129,102 @@ impl<T> Cell<'_, T> {
             .filter_map(|(row, col)| self.parent.get_cell(row, col))
     }
 
+    /// find the first cell in the row of the current cell
+    pub fn first_cell_in_row(&self) -> Cell<T> {
+        Cell {
+            parent: self.parent,
+            row: self.row,
+            col: 0,
+        }
+    }
+
+    /// return the last cell in the current row
+    pub fn last_cell_in_row(&self) -> Cell<T> {
+        Cell {
+            parent: self.parent,
+            row: self.row,
+            col: self.parent.inner[self.row].len() - 1,
+        }
+    }
+
+    /// returns the row of the current cell
+    pub fn get_row(&self) -> &[T] {
+        self.parent.inner[self.row].as_slice()
+    }
+
+    pub fn find_first_before<P>(&self, predicate: P) -> Option<Cell<T>>
+    where
+        P: Fn(&T) -> bool,
+    {
+        let row_vec = &self.parent.inner[self.row];
+        for (i, value) in row_vec.iter().enumerate().take(self.col).rev() {
+            if predicate(value) {
+                return self.parent.get_cell(self.row, i);
+            }
+        }
+        None
+    }
+
+    pub fn find_first_after<P>(&self, predicate: P) -> Option<Cell<T>>
+    where
+        P: Fn(&T) -> bool,
+    {
+        let row_vec = &self.parent.inner[self.row];
+        for (i, value) in row_vec.iter().enumerate().skip(self.col + 1) {
+            if predicate(value) {
+                return self.parent.get_cell(self.row, i);
+            }
+        }
+        None
+    }
+
+    /// Find the longest contiguous range of neighbors of this cell in the same row satisfying
+    /// the given predicate.
+    pub fn find_contiguous_satisfying<P>(&self, predicate: P) -> CellRowRange<T>
+    where
+        P: Fn(&T) -> bool,
+    {
+        let first_cell = self.find_first_before(|val| !predicate(val));
+        let first_cell = first_cell
+            .as_ref()
+            .and_then(|cell| cell.next_col())
+            .unwrap_or_else(|| self.first_cell_in_row());
+
+        let last_cell = self.find_first_after(|val| !predicate(val));
+        let last_cell = last_cell
+            .as_ref()
+            .and_then(|cell| cell.prev_col())
+            .unwrap_or_else(|| self.last_cell_in_row());
+
+        CellRowRange {
+            parent: self.parent,
+            row: self.row,
+            first_col: first_cell.col,
+            last_col: last_cell.col,
+        }
+    }
+
+    pub fn prev_col(&self) -> Option<Cell<T>> {
+        if self.col == 0 {
+            None
+        } else {
+            self.parent.get_cell(self.row, self.col - 1)
+        }
+    }
     pub fn next_col(&self) -> Option<Cell<T>> {
         self.parent.get_cell(self.row, self.col + 1)
+    }
+}
+
+impl<'a, T> PartialOrd for Cell<'a, T> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if !std::ptr::eq(self.parent, other.parent) {
+            return None;
+        }
+        match self.row.cmp(&other.row) {
+            Ordering::Equal => Some(self.col.cmp(&other.col)),
+            ordering => Some(ordering),
+        }
     }
 }
 
@@ -157,5 +256,24 @@ impl<'a, T> CellRowRange<'a, T> {
 
     pub fn as_slice(&self) -> &[T] {
         &self.parent.inner[self.row].as_slice()[self.first_col..=self.last_col]
+    }
+}
+
+impl<'a, T> PartialEq for CellRowRange<'a, T> {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(self.parent, other.parent)
+            && self.row == other.row
+            && self.first_col == other.first_col
+            && self.last_col == other.last_col
+    }
+}
+
+impl<'a, T> Eq for CellRowRange<'a, T> {}
+
+impl<'a, T> PartialOrd for CellRowRange<'a, T> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.first()
+            .partial_cmp(&other.first())
+            .or_else(|| self.last().partial_cmp(&other.last()))
     }
 }
