@@ -131,20 +131,20 @@ impl<T> Cell<'_, T> {
 
     /// find the first cell in the row of the current cell
     pub fn first_cell_in_row(&self) -> Cell<T> {
-        return Cell {
+        Cell {
             parent: self.parent,
             row: self.row,
             col: 0,
-        };
+        }
     }
 
     /// return the last cell in the current row
     pub fn last_cell_in_row(&self) -> Cell<T> {
-        return Cell {
+        Cell {
             parent: self.parent,
             row: self.row,
             col: self.parent.inner[self.row].len() - 1,
-        };
+        }
     }
 
     /// returns the row of the current cell
@@ -157,8 +157,8 @@ impl<T> Cell<'_, T> {
         P: Fn(&T) -> bool,
     {
         let row_vec = &self.parent.inner[self.row];
-        for i in (0..self.col).rev() {
-            if predicate(&row_vec[i]) {
+        for (i, value) in row_vec.iter().enumerate().take(self.col).rev() {
+            if predicate(value) {
                 return self.parent.get_cell(self.row, i);
             }
         }
@@ -170,8 +170,8 @@ impl<T> Cell<'_, T> {
         P: Fn(&T) -> bool,
     {
         let row_vec = &self.parent.inner[self.row];
-        for i in self.col + 1..row_vec.len() {
-            if predicate(&row_vec[i]) {
+        for (i, value) in row_vec.iter().enumerate().skip(self.col + 1) {
+            if predicate(value) {
                 return self.parent.get_cell(self.row, i);
             }
         }
@@ -187,8 +187,7 @@ impl<T> Cell<'_, T> {
         let first_cell = self.find_first_before(|val| !predicate(val));
         let first_cell = first_cell
             .as_ref()
-            .map(|cell| cell.next_col())
-            .flatten()
+            .and_then(|cell| cell.next_col())
             .unwrap_or_else(|| self.first_cell_in_row());
 
         let last_cell = self.find_first_after(|val| !predicate(val));
