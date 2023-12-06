@@ -18,6 +18,35 @@ impl Solution for Day5 {
     }
 }
 
+pub enum Day5P2 {}
+
+impl Solution for Day5P2 {
+    fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
+        let lines: Vec<_> = lines.map(|line| line.as_ref().to_string()).collect();
+        let problem = Problem::from_lines(lines.as_slice());
+
+        // this is dumb but it's my bedtime.
+        // I think we can do something where we find the "endpoints" of all the eventually mapped
+        // ranges, but will save that for another time.
+        let seed_line = &lines[0];
+        let parts: Vec<_> = seed_line
+            .strip_prefix("seeds: ")
+            .unwrap()
+            .split_ascii_whitespace()
+            .map(|s| s.parse::<u64>().unwrap())
+            .collect();
+
+        parts
+            .as_slice()
+            .chunks(2)
+            .flat_map(|chunk| (chunk[0]..=(chunk[0] + chunk[1])))
+            .map(|seed| problem.get_location(seed))
+            .min()
+            .unwrap()
+            .to_string()
+    }
+}
+
 #[derive(Debug, Hash, Ord, PartialOrd, Eq, PartialEq)]
 struct Problem {
     seeds: Vec<u64>,
@@ -135,7 +164,7 @@ impl MappingRange {
 #[cfg(test)]
 mod test {
     use crate::common::Solution;
-    use crate::day5::{Day5, Problem};
+    use crate::day5::{Day5, Day5P2, Problem};
 
     const EXAMPLE_INPUT: &'static str = r#"seeds: 79 14 55 13
 
@@ -174,6 +203,11 @@ humidity-to-location map:
     #[test]
     fn test_example() {
         assert_eq!(Day5::solve(EXAMPLE_INPUT.lines()), "35");
+    }
+
+    #[test]
+    fn test_example_p2() {
+        assert_eq!(Day5P2::solve(EXAMPLE_INPUT.lines()), "46");
     }
 
     #[test]
