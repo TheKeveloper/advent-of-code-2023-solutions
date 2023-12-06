@@ -7,7 +7,14 @@ pub enum Day5 {}
 impl Solution for Day5 {
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
         let lines: Vec<_> = lines.map(|line| line.as_ref().to_string()).collect();
-        unimplemented!()
+        let problem = Problem::from_lines(lines.as_slice());
+        problem
+            .seeds
+            .iter()
+            .map(|seed| problem.get_location(*seed))
+            .min()
+            .unwrap()
+            .to_string()
     }
 }
 
@@ -33,6 +40,26 @@ impl Problem {
             .collect();
 
         Problem { seeds, mappings }
+    }
+
+    fn get_location(&self, seed: u64) -> u64 {
+        self.find_next(seed, "seed")
+    }
+
+    fn find_next(&self, value: u64, category: &str) -> u64 {
+        if category.eq("location") {
+            return value;
+        }
+
+        let mapping = self.get_mapping(category);
+        self.find_next(mapping.map_value(value), mapping.destination.as_str())
+    }
+
+    fn get_mapping(&self, source: &str) -> &Mapping {
+        self.mappings
+            .iter()
+            .find(|mapping| mapping.source.as_str().eq(source))
+            .unwrap()
     }
 }
 
@@ -64,6 +91,13 @@ impl Mapping {
             ranges: mapping_ranges,
         }
     }
+
+    pub fn map_value(&self, value: u64) -> u64 {
+        self.ranges
+            .iter()
+            .find_map(|range| range.get_mapped_value(value))
+            .unwrap_or(value)
+    }
 }
 
 #[derive(Debug, Hash, Ord, PartialOrd, Eq, PartialEq)]
@@ -84,6 +118,17 @@ impl MappingRange {
             dest_start: dest_start.parse().unwrap(),
             length: length.parse().unwrap(),
         }
+    }
+
+    pub fn get_mapped_value(&self, input: u64) -> Option<u64> {
+        if input < self.source_start {
+            return None;
+        }
+        let dist = input - self.source_start;
+        if dist > self.length {
+            return None;
+        }
+        Some(self.dest_start + dist)
     }
 }
 
