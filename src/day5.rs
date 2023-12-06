@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use crate::common::Solution;
 
 pub enum Day5 {}
