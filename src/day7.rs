@@ -22,8 +22,29 @@ impl Solution for Day7 {
     }
 }
 
+pub enum Day7P2 {}
+
+impl Solution for Day7P2 {
+    fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
+        let mut hands: Vec<Hand> = lines.map(|line| line.as_ref().parse().unwrap()).collect();
+        let count = hands.len();
+        hands.sort_by(compare_hands_2);
+
+        hands
+            .iter()
+            .enumerate()
+            .map(|(index, hand)| ((count - index) as u64) * hand.bid)
+            .sum::<u64>()
+            .to_string()
+    }
+}
+
 static CARD_ORDERING: &'static [char] = &[
     'A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2',
+];
+
+static CARD_ORDERING_2: &'static [char] = &[
+    'A', 'K', 'Q', 'T', '9', '8', '7', '6', '5', '4', '3', '2', 'J',
 ];
 
 struct Hand {
@@ -85,6 +106,63 @@ impl Ord for Hand {
     }
 }
 
+fn compare_hands_2(first: &Hand, second: &Hand) -> Ordering {
+    let first_js_count = first
+        .ordered_card_counts
+        .iter()
+        .find_map(|(char, count)| if *char == 'J' { Some(*count) } else { None })
+        .unwrap_or(0usize);
+    let second_js_count = second
+        .ordered_card_counts
+        .iter()
+        .find_map(|(char, count)| if *char == 'J' { Some(*count) } else { None })
+        .unwrap_or(0usize);
+
+    let mut first_ordered: Vec<_> = first
+        .ordered_card_counts
+        .iter()
+        .map(|val| val.clone())
+        .filter(|(card, _)| *card != 'J')
+        .collect();
+
+    first_ordered
+        .get_mut(0)
+        .map(|(_, count)| *count += first_js_count);
+    if first_ordered.is_empty() {
+        first_ordered.push(('J', 5usize));
+    }
+
+    let mut second_ordered: Vec<_> = second
+        .ordered_card_counts
+        .iter()
+        .map(|val| val.clone())
+        .filter(|(card, _)| *card != 'J')
+        .collect();
+
+    second_ordered
+        .get_mut(0)
+        .map(|(_, count)| *count += second_js_count);
+    if second_ordered.is_empty() {
+        second_ordered.push(('J', 5usize));
+    }
+
+    for ((_, first_count), (_, second_count)) in zip(&first_ordered, &second_ordered) {
+        // N.B. need to get the lesser card so reverse order of compare
+        match second_count.cmp(first_count) {
+            Ordering::Equal => {}
+            unequal => return unequal,
+        }
+    }
+
+    for (self_card, other_card) in &mut first.original.chars().zip(&mut second.original.chars()) {
+        match compare_card_2(self_card, other_card) {
+            Ordering::Equal => {}
+            unequal => return unequal,
+        }
+    }
+    Ordering::Equal
+}
+
 fn get_ordered_count(cards: &str) -> Vec<(char, usize)> {
     let count_map = cards.chars().fold(HashMap::new(), |mut acc, c| {
         *acc.entry(c).or_insert(0) += 1;
@@ -116,10 +194,17 @@ fn compare_card(a: char, b: char) -> Ordering {
     a_index.cmp(&b_index)
 }
 
+fn compare_card_2(a: char, b: char) -> Ordering {
+    let a_index = CARD_ORDERING_2.iter().position(|c| *c == a).unwrap();
+    let b_index = CARD_ORDERING_2.iter().position(|c| *c == b).unwrap();
+
+    a_index.cmp(&b_index)
+}
+
 #[cfg(test)]
 mod test {
     use crate::common::Solution;
-    use crate::day7::Day7;
+    use crate::day7::{Day7, Day7P2};
 
     const INPUT: &'static str = r#"32T3K 765
 T55J5 684
@@ -129,5 +214,10 @@ QQQJA 483"#;
     #[test]
     fn test_example() {
         assert_eq!(Day7::solve(INPUT.lines()), "6440")
+    }
+
+    #[test]
+    fn test_example_p2() {
+        assert_eq!(Day7P2::solve(INPUT.lines()), "5905")
     }
 }
