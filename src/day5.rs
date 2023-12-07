@@ -164,7 +164,7 @@ mod test {
     use crate::common::Solution;
     use crate::day5::{Day5, Day5P2, Problem};
 
-    const EXAMPLE_INPUT: &'static str = r#"seeds: 79 14 55 13
+    const EXAMPLE_INPUT: &str = r#"seeds: 79 14 55 13
 
 seed-to-soil map:
 50 98 2
