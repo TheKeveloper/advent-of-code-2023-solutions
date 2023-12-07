@@ -39,11 +39,11 @@ impl Solution for Day7P2 {
     }
 }
 
-static CARD_ORDERING: &'static [char] = &[
+static CARD_ORDERING: &[char] = &[
     'A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2',
 ];
 
-static CARD_ORDERING_2: &'static [char] = &[
+static CARD_ORDERING_2: &[char] = &[
     'A', 'K', 'Q', 'T', '9', '8', '7', '6', '5', '4', '3', '2', 'J',
 ];
 
@@ -80,29 +80,28 @@ impl Eq for Hand {}
 
 impl PartialOrd for Hand {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+impl Ord for Hand {
+    fn cmp(&self, other: &Self) -> Ordering {
         for ((_, self_count), (_, other_count)) in
             zip(&self.ordered_card_counts, &other.ordered_card_counts)
         {
             // N.B. need to get the lesser card so reverse order of compare
             match other_count.cmp(self_count) {
                 Ordering::Equal => {}
-                unequal => return Some(unequal),
+                unequal => return unequal,
             }
         }
 
         for (self_card, other_card) in &mut self.original.chars().zip(&mut other.original.chars()) {
             match compare_card(self_card, other_card) {
                 Ordering::Equal => {}
-                unequal => return Some(unequal),
+                unequal => return unequal,
             }
         }
-        Some(Ordering::Equal)
-    }
-}
-
-impl Ord for Hand {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap()
+        Ordering::Equal
     }
 }
 
@@ -121,13 +120,13 @@ fn compare_hands_2(first: &Hand, second: &Hand) -> Ordering {
     let mut first_ordered: Vec<_> = first
         .ordered_card_counts
         .iter()
-        .map(|val| val.clone())
+        .copied()
         .filter(|(card, _)| *card != 'J')
         .collect();
 
-    first_ordered
-        .get_mut(0)
-        .map(|(_, count)| *count += first_js_count);
+    if let Some((_, count)) = first_ordered.get_mut(0) {
+        *count += first_js_count
+    }
     if first_ordered.is_empty() {
         first_ordered.push(('J', 5usize));
     }
@@ -135,13 +134,13 @@ fn compare_hands_2(first: &Hand, second: &Hand) -> Ordering {
     let mut second_ordered: Vec<_> = second
         .ordered_card_counts
         .iter()
-        .map(|val| val.clone())
+        .copied()
         .filter(|(card, _)| *card != 'J')
         .collect();
 
-    second_ordered
-        .get_mut(0)
-        .map(|(_, count)| *count += second_js_count);
+    if let Some((_, count)) = second_ordered.get_mut(0) {
+        *count += second_js_count
+    }
     if second_ordered.is_empty() {
         second_ordered.push(('J', 5usize));
     }
@@ -206,7 +205,7 @@ mod test {
     use crate::common::Solution;
     use crate::day7::{Day7, Day7P2};
 
-    const INPUT: &'static str = r#"32T3K 765
+    const INPUT: &str = r#"32T3K 765
 T55J5 684
 KK677 28
 KTJJT 220

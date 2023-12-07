@@ -107,7 +107,7 @@ mod test {
     use crate::common::Solution;
     use crate::day6::{Day6, Day6P2};
 
-    const INPUT: &'static str = r#"Time:      7  15   30
+    const INPUT: &str = r#"Time:      7  15   30
 Distance:  9  40  200"#;
 
     #[test]
