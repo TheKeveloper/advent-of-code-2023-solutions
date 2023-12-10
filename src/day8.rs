@@ -58,7 +58,7 @@ impl Network {
                 return steps;
             }
             steps += 1;
-            cur_node = self.get_next(&cur_node, direction)
+            cur_node = self.get_next(cur_node, direction)
         }
         steps
     }
@@ -71,7 +71,7 @@ impl Network {
                 return steps;
             }
             steps += 1;
-            cur_node = self.get_next(&cur_node, direction)
+            cur_node = self.get_next(cur_node, direction)
         }
         steps
     }
@@ -158,7 +158,7 @@ mod test {
     use crate::common::Solution;
     use crate::day8::{Day8, Day8P2};
 
-    const INPUT1: &'static str = r#"RL
+    const INPUT1: &str = r#"RL
 
 AAA = (BBB, CCC)
 BBB = (DDD, EEE)
@@ -168,7 +168,7 @@ EEE = (EEE, EEE)
 GGG = (GGG, GGG)
 ZZZ = (ZZZ, ZZZ)"#;
 
-    const INPUT2: &'static str = r#"LLR
+    const INPUT2: &str = r#"LLR
 
 AAA = (BBB, BBB)
 BBB = (AAA, ZZZ)
