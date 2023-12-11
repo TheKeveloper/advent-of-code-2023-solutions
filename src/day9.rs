@@ -13,6 +13,17 @@ impl Solution for Day9 {
     }
 }
 
+pub enum Day9P2 {}
+
+impl Solution for Day9P2 {
+    fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
+        lines
+            .map(|line| Sequence::<i64>::from_str(line.as_ref()).unwrap().get_prev())
+            .sum::<i64>()
+            .to_string()
+    }
+}
+
 struct Sequence<T> {
     values: Vec<T>,
 }
@@ -47,6 +58,15 @@ impl Sequence<i64> {
         self.values.last().unwrap() + diff_sequence.get_next()
     }
 
+    pub fn get_prev(&self) -> i64 {
+        if self.is_zeros() {
+            return 0;
+        }
+
+        let diff_sequence = self.diff_sequence();
+        self.values.first().unwrap() - diff_sequence.get_prev()
+    }
+
     fn diff_sequence(&self) -> Sequence<i64> {
         self.values
             .windows(2)
@@ -70,7 +90,7 @@ impl<T> From<Vec<T>> for Sequence<T> {
 #[cfg(test)]
 mod test {
     use crate::common::Solution;
-    use crate::day9::Day9;
+    use crate::day9::{Day9, Day9P2};
 
     const EXAMPLE_INPUT: &'static str = r#"0 3 6 9 12 15
 1 3 6 10 15 21
@@ -78,5 +98,10 @@ mod test {
     #[test]
     fn test_example() {
         assert_eq!(Day9::solve(EXAMPLE_INPUT.lines()), "114");
+    }
+
+    #[test]
+    fn test_example_p2() {
+        assert_eq!(Day9P2::solve(EXAMPLE_INPUT.lines()), "2");
     }
 }
