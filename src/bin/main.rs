@@ -13,6 +13,7 @@ use advent_of_code_2023_solutions::day5::{Day5, Day5P2};
 use advent_of_code_2023_solutions::day6::{Day6, Day6P2};
 use advent_of_code_2023_solutions::day7::{Day7, Day7P2};
 use advent_of_code_2023_solutions::day8::{Day8, Day8P2};
+use advent_of_code_2023_solutions::day9::{Day9, Day9P2};
 
 fn main() {
     let cli = Cli::from_args();
@@ -39,6 +40,8 @@ fn main() {
         (7, 2) => Day7P2::solve(lines),
         (8, 1) => Day8::solve(lines),
         (8, 2) => Day8P2::solve(lines),
+        (9, 1) => Day9::solve(lines),
+        (9, 2) => Day9P2::solve(lines),
         _ => unimplemented!(),
     };
     println!("{}", result)
