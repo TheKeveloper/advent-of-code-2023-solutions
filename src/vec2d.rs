@@ -45,6 +45,10 @@ impl<T> Vec2d<T> {
         self.inner.get(row).and_then(|row| row.get(col))
     }
 
+    pub fn get_mut(&mut self, row: usize, col: usize) -> Option<&mut T> {
+        self.inner.get_mut(row).and_then(|row| row.get_mut(col))
+    }
+
     pub fn get_cell(&self, row: usize, col: usize) -> Option<Cell<T>> {
         self.get(row, col).map(|_value| Cell {
             parent: self,
@@ -75,6 +79,16 @@ impl<T> Vec2d<T> {
             row,
             first_col,
             last_col,
+        }
+    }
+
+    pub fn map<F: Fn(&T) -> S, S>(&self, f: F) -> Vec2d<S> {
+        Vec2d {
+            inner: self
+                .inner
+                .iter()
+                .map(|row| row.iter().map(&f).collect())
+                .collect(),
         }
     }
 }
