@@ -41,38 +41,6 @@ impl From<char> for Tile {
 }
 
 impl Tile {
-    /// whether this tile is a pipe that can connect to the tile above
-    pub fn connects_above(&self) -> bool {
-        match self {
-            Tile::NorthSouth | Tile::NorthEast | Tile::NorthWest => true,
-            _ => false,
-        }
-    }
-
-    /// whether this tile is a pipe that can connect to the tile below it
-    pub fn connects_below(&self) -> bool {
-        match self {
-            Tile::SouthEast | Tile::SouthWest | Tile::NorthSouth => true,
-            _ => false,
-        }
-    }
-
-    /// whether this tile is a pipe that can connect to the tile to its left
-    pub fn connects_left(&self) -> bool {
-        match self {
-            Tile::SouthWest | Tile::NorthWest | Tile::EastWest => true,
-            _ => false,
-        }
-    }
-
-    /// whether this tile is a pipe that can connect to the tile to its right
-    pub fn connects_right(&self) -> bool {
-        match self {
-            Tile::NorthEast | Tile::SouthEast | Tile::EastWest => true,
-            _ => false,
-        }
-    }
-
     pub fn is_start(&self) -> bool {
         match self {
             Tile::Start => true,
@@ -91,20 +59,15 @@ impl Vec2d<Tile> {
         let mut cur = self.find_start();
         let mut prev = self.find_start();
         while !cur.value().is_start() || prev.eq(&cur) {
-            let directions = cur.get_next_directions();
-            let cur_clone = self.get_cell(cur.row(), cur.col()).unwrap();
-            let next_cell = directions
-                .iter()
-                .filter_map(|(row, col)| cur_clone.get_diff(*row, *col))
-                .filter(|cell| !prev.eq(&cell))
-                .last();
+            let next_cells = cur.get_next_cells();
+            let next_cell = next_cells.into_iter().filter(|cell| !prev.eq(cell)).next();
             match next_cell {
                 None => {
-                    return count + 2;
+                    return count + 1;
                 }
                 Some(next) => {
-                    count += 2;
-                    prev = cur;
+                    count += 1;
+                    prev = cur.clone();
                     cur = self.get_cell(next.row(), next.col()).unwrap();
                 }
             }
@@ -114,46 +77,44 @@ impl Vec2d<Tile> {
 }
 
 impl<'a> Cell<'a, Tile> {
-    fn get_next_directions(&'a self) -> Vec<(isize, isize)> {
-        let mut directions: Vec<(isize, isize)> = Vec::with_capacity(4);
-
-        if let Some(top) = self.get_top() {
-            match top.value() {
-                Tile::NorthSouth => directions.push((-2, 0)),
-                Tile::SouthEast => directions.push((-1, 1)),
-                Tile::SouthWest => directions.push((-1, -1)),
-                _ => {}
-            };
+    fn get_next_cells(&'a self) -> Vec<Cell<Tile>> {
+        match self.value() {
+            Tile::NorthSouth => [self.get_top(), self.get_below()]
+                .into_iter()
+                .filter_map(|val| val)
+                .collect(),
+            Tile::EastWest => [self.get_left(), self.get_right()]
+                .into_iter()
+                .filter_map(|val| val)
+                .collect(),
+            Tile::NorthEast => [self.get_top(), self.get_right()]
+                .into_iter()
+                .filter_map(|val| val)
+                .collect(),
+            Tile::NorthWest => [self.get_top(), self.get_left()]
+                .into_iter()
+                .filter_map(|val| val)
+                .collect(),
+            Tile::SouthEast => [self.get_below(), self.get_right()]
+                .into_iter()
+                .filter_map(|val| val)
+                .collect(),
+            Tile::SouthWest => [self.get_below(), self.get_left()]
+                .into_iter()
+                .filter_map(|val| val)
+                .collect(),
+            Tile::Empty => vec![],
+            Tile::Start => [
+                self.get_top(),
+                self.get_left(),
+                self.get_right(),
+                self.get_below(),
+            ]
+            .into_iter()
+            .filter_map(|val| val)
+            .filter(|val| !matches!(val.value(), Tile::Empty))
+            .collect(),
         }
-
-        if let Some(below) = self.get_below() {
-            match below.value() {
-                Tile::NorthSouth => directions.push((2, 0)),
-                Tile::NorthEast => directions.push((1, 1)),
-                Tile::NorthWest => directions.push((1, -1)),
-                _ => {}
-            };
-        }
-
-        if let Some(left) = self.get_left() {
-            match left.value() {
-                Tile::EastWest => directions.push((0, -2)),
-                Tile::NorthEast => directions.push((-1, -1)),
-                Tile::SouthEast => directions.push((1, -1)),
-                _ => {}
-            };
-        }
-
-        if let Some(right) = self.get_right() {
-            match right.value() {
-                Tile::EastWest => directions.push((0, 2)),
-                Tile::NorthWest => directions.push((-1, 1)),
-                Tile::SouthWest => directions.push((1, 1)),
-                _ => {}
-            };
-        }
-
-        directions
     }
 }
 #[cfg(test)]

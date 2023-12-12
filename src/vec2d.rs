@@ -24,11 +24,7 @@ pub struct CellRowRange<'a, T> {
 
 impl<'a, T> Clone for Cell<'a, T> {
     fn clone(&self) -> Self {
-        Cell {
-            parent: self.parent,
-            row: self.row,
-            col: self.col,
-        }
+        self.parent.get_cell(self.row(), self.col()).unwrap()
     }
 }
 
