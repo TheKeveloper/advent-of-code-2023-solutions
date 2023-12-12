@@ -1,12 +1,12 @@
 use std::cmp::Ordering;
-use std::fmt::{Display, Write};
+use std::fmt::{Debug, Display, Formatter, Write};
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Eq, PartialEq)]
 pub struct Vec2d<T> {
     pub(crate) inner: Vec<Vec<T>>,
 }
 
-#[derive(Debug, Copy)]
+#[derive(Copy)]
 pub struct Cell<'a, T> {
     pub(crate) parent: &'a Vec2d<T>,
     pub(crate) row: usize,
@@ -15,7 +15,6 @@ pub struct Cell<'a, T> {
 
 /// Represents a contiguous set of cells within a specific row
 /// It is guaranteed that the row value of these cells is the same
-#[derive(Debug)]
 pub struct CellRowRange<'a, T> {
     parent: &'a Vec2d<T>,
     row: usize,
@@ -25,11 +24,7 @@ pub struct CellRowRange<'a, T> {
 
 impl<'a, T> Clone for Cell<'a, T> {
     fn clone(&self) -> Self {
-        Cell {
-            parent: self.parent,
-            row: self.row,
-            col: self.col,
-        }
+        self.parent.get_cell(self.row(), self.col()).unwrap()
     }
 }
 
@@ -43,6 +38,10 @@ impl<'a, T> Eq for Cell<'a, T> {}
 impl<T> Vec2d<T> {
     pub fn get(&self, row: usize, col: usize) -> Option<&T> {
         self.inner.get(row).and_then(|row| row.get(col))
+    }
+
+    pub fn get_mut(&mut self, row: usize, col: usize) -> Option<&mut T> {
+        self.inner.get_mut(row).and_then(|row| row.get_mut(col))
     }
 
     pub fn get_cell(&self, row: usize, col: usize) -> Option<Cell<T>> {
@@ -77,6 +76,24 @@ impl<T> Vec2d<T> {
             last_col,
         }
     }
+
+    pub fn map<F: Fn(&T) -> S, S>(&self, f: F) -> Vec2d<S> {
+        Vec2d {
+            inner: self
+                .inner
+                .iter()
+                .map(|row| row.iter().map(&f).collect())
+                .collect(),
+        }
+    }
+}
+
+impl<T: Copy> Vec2d<T> {
+    pub fn with_shape_and_value(rows: usize, cols: usize, value: T) -> Vec2d<T> {
+        Vec2d {
+            inner: (0..rows).map(|_| vec![value; cols]).collect(),
+        }
+    }
 }
 
 impl Vec2d<char> {
@@ -84,6 +101,26 @@ impl Vec2d<char> {
         Vec2d {
             inner: lines.map(|line| line.as_ref().chars().collect()).collect(),
         }
+    }
+}
+
+impl<T> Vec2d<Option<T>> {
+    pub fn flat_get(&self, row: usize, col: usize) -> Option<&T> {
+        self.get(row, col).and_then(|val| val.as_ref())
+    }
+
+    pub fn flat_get_mut(&mut self, row: usize, col: usize) -> Option<&mut T> {
+        self.get_mut(row, col).and_then(|val| val.as_mut())
+    }
+}
+
+impl<T: Debug> Debug for Vec2d<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        for row in &self.inner {
+            row.fmt(f)?;
+            f.write_char('\n')?;
+        }
+        Ok(())
     }
 }
 
@@ -99,6 +136,30 @@ impl<'a> Display for CellRowRange<'a, char> {
 impl<T> Cell<'_, T> {
     pub fn value(&self) -> &T {
         &self.parent.inner[self.row][self.col]
+    }
+
+    pub fn row(&self) -> usize {
+        self.row
+    }
+
+    pub fn col(&self) -> usize {
+        self.col
+    }
+
+    pub fn get_top(&self) -> Option<Cell<T>> {
+        self.get_diff(-1, 0)
+    }
+
+    pub fn get_below(&self) -> Option<Cell<T>> {
+        self.get_diff(1, 0)
+    }
+
+    pub fn get_left(&self) -> Option<Cell<T>> {
+        self.get_diff(0, -1)
+    }
+
+    pub fn get_right(&self) -> Option<Cell<T>> {
+        self.get_diff(0, 1)
     }
 
     pub fn neighbors(&self) -> impl Iterator<Item = Cell<T>> {
@@ -213,6 +274,15 @@ impl<T> Cell<'_, T> {
     }
     pub fn next_col(&self) -> Option<Cell<T>> {
         self.parent.get_cell(self.row, self.col + 1)
+    }
+
+    /// Modify the row and column by the specified value and return the cell at the coordiante,
+    /// if it exists
+    pub fn get_diff(&self, row: isize, col: isize) -> Option<Cell<T>> {
+        self.row
+            .checked_add_signed(row)
+            .and_then(|row| self.col.checked_add_signed(col).map(|col| (row, col)))
+            .and_then(|(row, col)| self.parent.get_cell(row, col))
     }
 }
 

@@ -92,7 +92,7 @@ mod test {
     use crate::common::Solution;
     use crate::day9::{Day9, Day9P2};
 
-    const EXAMPLE_INPUT: &'static str = r#"0 3 6 9 12 15
+    const EXAMPLE_INPUT: &str = r#"0 3 6 9 12 15
 1 3 6 10 15 21
 10 13 16 21 30 45"#;
     #[test]
