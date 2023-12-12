@@ -1,5 +1,7 @@
+#![allow(dead_code)]
 use crate::common::Solution;
 use crate::vec2d::{Cell, Vec2d};
+use std::collections::VecDeque;
 
 pub enum Day10 {}
 
@@ -10,10 +12,10 @@ impl Solution for Day10 {
         let mut distances: Vec2d<Option<usize>> = matrix.map(|_| None);
         let start = matrix.find_start();
         *distances.get_mut(start.row(), start.col()).unwrap() = Some(0);
-        let mut stack: Vec<Cell<Tile>> = Vec::new();
-        stack.push(start);
+        let mut queue: VecDeque<Cell<Tile>> = VecDeque::new();
+        queue.push_back(start);
 
-        while let Some(tile) = stack.pop() {
+        while let Some(tile) = queue.pop_front() {
             let tile_distance = *distances
                 .flat_get(tile.row(), tile.col())
                 .expect("Everything in this loop should have a distance already");
@@ -24,7 +26,7 @@ impl Solution for Day10 {
                     let distance = distances.get_mut(next_cell.row(), next_cell.col()).unwrap();
                     if distance.is_none() {
                         *distance = Some(tile_distance + 2);
-                        stack.push(matrix.get_cell(next_cell.row(), next_cell.col()).unwrap())
+                        queue.push_back(matrix.get_cell(next_cell.row(), next_cell.col()).unwrap())
                     }
                 }
             }
