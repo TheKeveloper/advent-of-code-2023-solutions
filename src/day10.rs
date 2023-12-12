@@ -9,7 +9,7 @@ impl Solution for Day10 {
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
         let matrix = Vec2d::from_lines(lines);
         let matrix = matrix.map(|c| Tile::from(*c));
-        (matrix.compute_loop_size() / 2).to_string()
+        ((matrix.compute_loop().len() + 1) / 2).to_string()
     }
 }
 
@@ -42,10 +42,7 @@ impl From<char> for Tile {
 
 impl Tile {
     pub fn is_start(&self) -> bool {
-        match self {
-            Tile::Start => true,
-            _ => false,
-        }
+        matches!(self, Tile::Start)
     }
 }
 
@@ -54,25 +51,25 @@ impl Vec2d<Tile> {
         self.cells().find(|c| c.value().is_start()).unwrap()
     }
 
-    pub fn compute_loop_size(&self) -> usize {
-        let mut count = 0;
+    pub fn compute_loop(&self) -> Vec<Cell<Tile>> {
+        let mut result = Vec::new();
         let mut cur = self.find_start();
         let mut prev = self.find_start();
         while !cur.value().is_start() || prev.eq(&cur) {
+            result.push(cur.clone());
             let next_cells = cur.get_next_cells();
-            let next_cell = next_cells.into_iter().filter(|cell| !prev.eq(cell)).next();
+            let next_cell = next_cells.into_iter().find(|cell| !prev.eq(cell));
             match next_cell {
                 None => {
-                    return count + 1;
+                    return result;
                 }
                 Some(next) => {
-                    count += 1;
                     prev = cur.clone();
                     cur = self.get_cell(next.row(), next.col()).unwrap();
                 }
             }
         }
-        count
+        result
     }
 }
 
@@ -81,27 +78,27 @@ impl<'a> Cell<'a, Tile> {
         match self.value() {
             Tile::NorthSouth => [self.get_top(), self.get_below()]
                 .into_iter()
-                .filter_map(|val| val)
+                .flatten()
                 .collect(),
             Tile::EastWest => [self.get_left(), self.get_right()]
                 .into_iter()
-                .filter_map(|val| val)
+                .flatten()
                 .collect(),
             Tile::NorthEast => [self.get_top(), self.get_right()]
                 .into_iter()
-                .filter_map(|val| val)
+                .flatten()
                 .collect(),
             Tile::NorthWest => [self.get_top(), self.get_left()]
                 .into_iter()
-                .filter_map(|val| val)
+                .flatten()
                 .collect(),
             Tile::SouthEast => [self.get_below(), self.get_right()]
                 .into_iter()
-                .filter_map(|val| val)
+                .flatten()
                 .collect(),
             Tile::SouthWest => [self.get_below(), self.get_left()]
                 .into_iter()
-                .filter_map(|val| val)
+                .flatten()
                 .collect(),
             Tile::Empty => vec![],
             Tile::Start => [
@@ -111,7 +108,7 @@ impl<'a> Cell<'a, Tile> {
                 self.get_below(),
             ]
             .into_iter()
-            .filter_map(|val| val)
+            .flatten()
             .filter(|val| !matches!(val.value(), Tile::Empty))
             .collect(),
         }
