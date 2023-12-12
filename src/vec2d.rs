@@ -56,6 +56,10 @@ impl<T> Vec2d<T> {
         self.inner.get(row).map(|row| row.as_slice())
     }
 
+    pub fn get_col_cells(&self, col: usize) -> impl Iterator<Item = Cell<T>> {
+        (0..self.inner.len()).filter_map(move |row| self.get_cell(row, col))
+    }
+
     pub fn cells(&self) -> impl Iterator<Item = Cell<T>> {
         self.inner
             .iter()
@@ -136,6 +140,10 @@ impl<'a> Display for CellRowRange<'a, char> {
 impl<T> Cell<'_, T> {
     pub fn value(&self) -> &T {
         &self.parent.inner[self.row][self.col]
+    }
+
+    pub fn coords(&self) -> (usize, usize) {
+        (self.row, self.col)
     }
 
     pub fn row(&self) -> usize {
