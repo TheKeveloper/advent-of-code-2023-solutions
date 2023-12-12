@@ -1,12 +1,12 @@
 use std::cmp::Ordering;
-use std::fmt::{Display, Write};
+use std::fmt::{Debug, Display, Formatter, Write};
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Eq, PartialEq)]
 pub struct Vec2d<T> {
     pub(crate) inner: Vec<Vec<T>>,
 }
 
-#[derive(Debug, Copy)]
+#[derive(Copy)]
 pub struct Cell<'a, T> {
     pub(crate) parent: &'a Vec2d<T>,
     pub(crate) row: usize,
@@ -15,7 +15,6 @@ pub struct Cell<'a, T> {
 
 /// Represents a contiguous set of cells within a specific row
 /// It is guaranteed that the row value of these cells is the same
-#[derive(Debug)]
 pub struct CellRowRange<'a, T> {
     parent: &'a Vec2d<T>,
     row: usize,
@@ -116,6 +115,16 @@ impl<T> Vec2d<Option<T>> {
 
     pub fn flat_get_mut(&mut self, row: usize, col: usize) -> Option<&mut T> {
         self.get_mut(row, col).and_then(|val| val.as_mut())
+    }
+}
+
+impl<T: Debug> Debug for Vec2d<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        for row in &self.inner {
+            row.fmt(f)?;
+            f.write_char('\n')?;
+        }
+        Ok(())
     }
 }
 

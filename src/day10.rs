@@ -1,7 +1,7 @@
 #![allow(dead_code)]
+
 use crate::common::Solution;
 use crate::vec2d::{Cell, Vec2d};
-use std::collections::VecDeque;
 
 pub enum Day10 {}
 
@@ -9,34 +9,7 @@ impl Solution for Day10 {
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
         let matrix = Vec2d::from_lines(lines);
         let matrix = matrix.map(|c| Tile::from(*c));
-        let mut distances: Vec2d<Option<usize>> = matrix.map(|_| None);
-        let start = matrix.find_start();
-        *distances.get_mut(start.row(), start.col()).unwrap() = Some(0);
-        let mut queue: VecDeque<Cell<Tile>> = VecDeque::new();
-        queue.push_back(start);
-
-        while let Some(tile) = queue.pop_front() {
-            let tile_distance = *distances
-                .flat_get(tile.row(), tile.col())
-                .expect("Everything in this loop should have a distance already");
-            let directions = tile.get_next_directions();
-            for (row_diff, col_diff) in directions {
-                let next_cell = tile.get_diff(row_diff, col_diff);
-                if let Some(next_cell) = next_cell {
-                    let distance = distances.get_mut(next_cell.row(), next_cell.col()).unwrap();
-                    if distance.is_none() {
-                        *distance = Some(tile_distance + 2);
-                        queue.push_back(matrix.get_cell(next_cell.row(), next_cell.col()).unwrap())
-                    }
-                }
-            }
-        }
-        distances
-            .cells()
-            .filter_map(|cell| cell.value().as_ref().cloned())
-            .max()
-            .unwrap()
-            .to_string()
+        (matrix.compute_loop_size() / 2).to_string()
     }
 }
 
@@ -112,6 +85,32 @@ impl Vec2d<Tile> {
     pub fn find_start(&self) -> Cell<Tile> {
         self.cells().find(|c| c.value().is_start()).unwrap()
     }
+
+    pub fn compute_loop_size(&self) -> usize {
+        let mut count = 0;
+        let mut cur = self.find_start();
+        let mut prev = self.find_start();
+        while !cur.value().is_start() || prev.eq(&cur) {
+            let directions = cur.get_next_directions();
+            let cur_clone = self.get_cell(cur.row(), cur.col()).unwrap();
+            let next_cell = directions
+                .iter()
+                .filter_map(|(row, col)| cur_clone.get_diff(*row, *col))
+                .filter(|cell| !prev.eq(&cell))
+                .last();
+            match next_cell {
+                None => {
+                    return count + 2;
+                }
+                Some(next) => {
+                    count += 2;
+                    prev = cur;
+                    cur = self.get_cell(next.row(), next.col()).unwrap();
+                }
+            }
+        }
+        count
+    }
 }
 
 impl<'a> Cell<'a, Tile> {
@@ -162,13 +161,13 @@ mod test {
     use crate::common::Solution;
     use crate::day10::Day10;
 
-    const SIMPLE_EXAMPLE_INPUT: &'static str = r#".....
+    const SIMPLE_EXAMPLE_INPUT: &str = r#".....
 .S-7.
 .|.|.
 .L-J.
 ....."#;
 
-    const COMPLEX_EXAMPLE_INPUT: &'static str = r#"..F7.
+    const COMPLEX_EXAMPLE_INPUT: &str = r#"..F7.
 .FJ|.
 SJ.L7
 |F--J
