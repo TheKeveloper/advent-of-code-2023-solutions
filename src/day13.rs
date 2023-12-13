@@ -20,6 +20,20 @@ impl Solution for Day13 {
     }
 }
 
+pub enum Day13P2 {}
+
+impl Solution for Day13P2 {
+    fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
+        let combined = lines.map(|s| s.as_ref().to_string()).join("\n");
+
+        combined
+            .split("\n\n")
+            .map(|s| s.parse::<Pattern>().unwrap().get_reflection_summary_p2())
+            .sum::<usize>()
+            .to_string()
+    }
+}
+
 struct Pattern {
     tiles: Vec2d<Tile>,
 }
@@ -31,6 +45,66 @@ impl Pattern {
         } else {
             self.get_reflecting_col().unwrap()
         }
+    }
+
+    pub fn get_reflection_summary_p2(&self) -> usize {
+        if let Some(row) = self.get_reflecting_row_p2() {
+            row * 100
+        } else {
+            self.get_reflecting_col_p2().unwrap()
+        }
+    }
+
+    fn get_reflecting_row_p2(&self) -> Option<usize> {
+        let num_rows = self.tiles.num_rows();
+        for row in 0..(num_rows - 1) {
+            let mut used_smudge = false;
+            for margin in 1..num_rows {
+                if let Some(it) = self.reflect_below_row(row, margin) {
+                    let diff_count = it.filter(|(a, b)| a.ne(b)).count();
+                    if diff_count == 1 && used_smudge {
+                        break;
+                    } else if diff_count == 1 {
+                        used_smudge = true;
+                    } else if diff_count > 0 {
+                        break;
+                    }
+                } else {
+                    if used_smudge {
+                        return Some(row + 1);
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    fn get_reflecting_col_p2(&self) -> Option<usize> {
+        let num_cols = self.get_num_cols();
+        for col in 0..(num_cols - 1) {
+            let mut used_smudge = false;
+            for margin in 1..num_cols {
+                if let Some(it) = self.reflect_right_of_col(col, margin) {
+                    let diff_count = it.filter(|(a, b)| a.ne(b)).count();
+                    if diff_count == 1 && used_smudge {
+                        break;
+                    } else if diff_count == 1 {
+                        used_smudge = true;
+                    } else if diff_count > 0 {
+                        break;
+                    }
+                } else {
+                    if used_smudge {
+                        return Some(col + 1);
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+        None
     }
 
     fn get_reflecting_col(&self) -> Option<usize> {
@@ -138,7 +212,7 @@ impl From<char> for Tile {
 #[cfg(test)]
 mod test {
     use crate::common::Solution;
-    use crate::day13::Day13;
+    use crate::day13::{Day13, Day13P2};
 
     const EXAMPLE_INPUT: &'static str = r#"#.##..##.
 ..#.##.#.
@@ -158,5 +232,10 @@ mod test {
     #[test]
     fn test_example() {
         assert_eq!(Day13::solve(EXAMPLE_INPUT.lines()), "405")
+    }
+
+    #[test]
+    fn test_example_part2() {
+        assert_eq!(Day13P2::solve(EXAMPLE_INPUT.lines()), "400")
     }
 }
