@@ -23,18 +23,16 @@ impl Solution for Day12P2 {
                 let record = line.as_ref().parse::<Record>().unwrap();
                 let record = Record {
                     springs: (0..5)
-                        .map(|i| {
+                        .flat_map(|i| {
                             let mut springs = record.springs.clone();
                             if i != 4 {
                                 springs.push(Condition::Unknown);
                             }
                             springs
                         })
-                        .flatten()
                         .collect(),
                     damaged_records: (0..5)
-                        .map(|_| record.damaged_records.clone())
-                        .flatten()
+                        .flat_map(|_| record.damaged_records.clone())
                         .collect(),
                 };
                 record.get_arrangements()
@@ -180,7 +178,7 @@ mod test {
     use crate::common::Solution;
     use crate::day12::{Day12, Day12P2};
 
-    const EXAMPLE_INPUT: &'static str = r#"???.### 1,1,3
+    const EXAMPLE_INPUT: &str = r#"???.### 1,1,3
 .??..??...?##. 1,1,3
 ?#?#?#?#?#?#?#? 1,3,1,6
 ????.#...#... 4,1,1
