@@ -32,66 +32,66 @@ impl Record {
         cache_index: CacheIndex,
     ) -> usize {
         let entry = dp.get(&cache_index).cloned();
-        match entry {
-            Some(value) => value,
-            None => {
-                let Some(len) = self.damaged_records.get(cache_index.damaged_index) else {
-                    let result = {
-                        // either we used up everything, or all the remainders are not damaged
-                        if cache_index.springs_index >= self.springs.len()
-                            || self.springs[cache_index.springs_index..self.springs.len()]
-                                .iter()
-                                .all(|val| !val.is_damaged())
-                        {
-                            1
-                        } else {
-                            0
-                        }
-                    };
-                    dp.insert(cache_index, result);
-                    return result;
-                };
-                let start = cache_index.springs_index;
-                let end = start + len - 1;
-                if end >= self.springs.len() {
-                    return 0;
-                }
-
-                let take_result = if self.springs[start..=end]
-                    .iter()
-                    .all(|condition| condition.could_be_damaged())
-                    // check that the next one after this is is not damaged or this is the last
-                    // element in the list
-                    && self
-                        .springs
-                        .get(end + 1)
-                        .map(|val| !val.is_damaged())
-                        .unwrap_or(true)
-                {
-                    self.get_arrangements_dp(
-                        dp,
-                        CacheIndex {
-                            springs_index: end + 2,
-                            damaged_index: cache_index.damaged_index + 1,
-                        },
-                    )
-                } else {
-                    0usize
-                };
-
-                let no_take_result = self.get_arrangements_dp(
-                    dp,
-                    CacheIndex {
-                        springs_index: start + 1,
-                        damaged_index: cache_index.damaged_index,
-                    },
-                );
-
-                let result = take_result + no_take_result;
-                dp.insert(cache_index, result);
-                result
-            }
+        if let Some(value) = entry {
+            return value;
         }
+
+        let Some(len) = self.damaged_records.get(cache_index.damaged_index) else {
+            let result = {
+                // either we used up everything, or all the remainders are not damaged
+                if cache_index.springs_index >= self.springs.len()
+                    || self.springs[cache_index.springs_index..self.springs.len()]
+                        .iter()
+                        .all(|val| !val.is_damaged())
+                {
+                    1
+                } else {
+                    0
+                }
+            };
+            dp.insert(cache_index, result);
+            return result;
+        };
+        let start = cache_index.springs_index;
+        let end = start + len - 1;
+        // we have used up all of the springs but not all of the damage records
+        if end >= self.springs.len() {
+            return 0;
+        }
+
+        let take_result = if self.springs[start..=end]
+            .iter()
+            .all(|condition| condition.could_be_damaged())
+            // check that the next one after this is is not damaged or this is the last
+            // element in the list
+            && self
+            .springs
+            .get(end + 1)
+            .map(|val| !val.is_damaged())
+            .unwrap_or(true)
+        {
+            self.get_arrangements_dp(
+                dp,
+                CacheIndex {
+                    springs_index: end + 2,
+                    damaged_index: cache_index.damaged_index + 1,
+                },
+            )
+        } else {
+            0
+        };
+
+        let no_take_result = self.get_arrangements_dp(
+            dp,
+            CacheIndex {
+                springs_index: start + 1,
+                damaged_index: cache_index.damaged_index,
+            },
+        );
+
+        let result = take_result + no_take_result;
+        dp.insert(cache_index, result);
+        result
     }
 }
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Default)]
