@@ -22,7 +22,6 @@ struct Record {
 impl Record {
     pub fn get_arrangements(&self) -> usize {
         let value = self.get_arrangements_dp(&mut HashMap::new(), CacheIndex::default());
-        println!("value: {}", value);
         value
     }
 
@@ -81,13 +80,17 @@ impl Record {
             0
         };
 
-        let no_take_result = self.get_arrangements_dp(
-            dp,
-            CacheIndex {
-                springs_index: start + 1,
-                damaged_index: cache_index.damaged_index,
-            },
-        );
+        let no_take_result = if self.springs[cache_index.springs_index].is_damaged() {
+            0
+        } else {
+            self.get_arrangements_dp(
+                dp,
+                CacheIndex {
+                    springs_index: start + 1,
+                    damaged_index: cache_index.damaged_index,
+                },
+            )
+        };
 
         let result = take_result + no_take_result;
         dp.insert(cache_index, result);
