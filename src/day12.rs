@@ -14,6 +14,36 @@ impl Solution for Day12 {
     }
 }
 
+pub enum Day12P2 {}
+
+impl Solution for Day12P2 {
+    fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
+        lines
+            .map(|line| {
+                let record = line.as_ref().parse::<Record>().unwrap();
+                let record = Record {
+                    springs: (0..5)
+                        .map(|i| {
+                            let mut springs = record.springs.clone();
+                            if i != 4 {
+                                springs.push(Condition::Unknown);
+                            }
+                            springs
+                        })
+                        .flatten()
+                        .collect(),
+                    damaged_records: (0..5)
+                        .map(|_| record.damaged_records.clone())
+                        .flatten()
+                        .collect(),
+                };
+                record.get_arrangements()
+            })
+            .sum::<usize>()
+            .to_string()
+    }
+}
+
 struct Record {
     springs: Vec<Condition>,
     damaged_records: Vec<usize>,
@@ -21,8 +51,7 @@ struct Record {
 
 impl Record {
     pub fn get_arrangements(&self) -> usize {
-        let value = self.get_arrangements_dp(&mut HashMap::new(), CacheIndex::default());
-        value
+        self.get_arrangements_dp(&mut HashMap::new(), CacheIndex::default())
     }
 
     fn get_arrangements_dp(
@@ -118,6 +147,7 @@ impl FromStr for Record {
     }
 }
 
+#[derive(Clone, Eq, PartialEq)]
 enum Condition {
     Operational,
     Damaged,
@@ -148,7 +178,7 @@ impl From<char> for Condition {
 #[cfg(test)]
 mod test {
     use crate::common::Solution;
-    use crate::day12::Day12;
+    use crate::day12::{Day12, Day12P2};
 
     const EXAMPLE_INPUT: &'static str = r#"???.### 1,1,3
 .??..??...?##. 1,1,3
@@ -159,5 +189,10 @@ mod test {
     #[test]
     fn test_example() {
         assert_eq!(Day12::solve(EXAMPLE_INPUT.lines()), "21")
+    }
+
+    #[test]
+    fn test_example_part2() {
+        assert_eq!(Day12P2::solve(EXAMPLE_INPUT.lines()), "525152")
     }
 }
