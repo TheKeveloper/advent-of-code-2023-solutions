@@ -31,19 +31,25 @@ impl Record {
         dp: &mut HashMap<CacheIndex, usize>,
         cache_index: CacheIndex,
     ) -> usize {
-        if cache_index.damaged_index >= self.damaged_records.len() {
-            return 1;
-        }
-
-        if cache_index.springs_index >= self.springs.len() {
-            return 0;
-        }
         let entry = dp.get(&cache_index).cloned();
         match entry {
             Some(value) => value,
             None => {
                 let Some(len) = self.damaged_records.get(cache_index.damaged_index) else {
-                    return 0;
+                    let result = {
+                        // either we used up everything, or all the remainders are not damaged
+                        if cache_index.springs_index >= self.springs.len()
+                            || self.springs[cache_index.springs_index..self.springs.len()]
+                                .iter()
+                                .all(|val| !val.is_damaged())
+                        {
+                            1
+                        } else {
+                            0
+                        }
+                    };
+                    dp.insert(cache_index, result);
+                    return result;
                 };
                 let start = cache_index.springs_index;
                 let end = start + len - 1;
