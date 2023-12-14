@@ -69,12 +69,10 @@ impl Pattern {
                     } else if diff_count > 0 {
                         break;
                     }
+                } else if used_smudge {
+                    return Some(row + 1);
                 } else {
-                    if used_smudge {
-                        return Some(row + 1);
-                    } else {
-                        break;
-                    }
+                    break;
                 }
             }
         }
@@ -95,12 +93,10 @@ impl Pattern {
                     } else if diff_count > 0 {
                         break;
                     }
+                } else if used_smudge {
+                    return Some(col + 1);
                 } else {
-                    if used_smudge {
-                        return Some(col + 1);
-                    } else {
-                        break;
-                    }
+                    break;
                 }
             }
         }
@@ -153,8 +149,8 @@ impl Pattern {
         }
 
         Some(zip(
-            self.tiles.get_col(left_col).map(|t| *t),
-            self.tiles.get_col(right_col).map(|t| *t),
+            self.tiles.get_col(left_col).copied(),
+            self.tiles.get_col(right_col).copied(),
         ))
     }
 
@@ -172,8 +168,8 @@ impl Pattern {
         }
 
         Some(zip(
-            self.tiles.get_row(bottom_row).unwrap().iter().map(|t| *t),
-            self.tiles.get_row(top_row).unwrap().iter().map(|t| *t),
+            self.tiles.get_row(bottom_row).unwrap().iter().copied(),
+            self.tiles.get_row(top_row).unwrap().iter().copied(),
         ))
     }
 
@@ -214,7 +210,7 @@ mod test {
     use crate::common::Solution;
     use crate::day13::{Day13, Day13P2};
 
-    const EXAMPLE_INPUT: &'static str = r#"#.##..##.
+    const EXAMPLE_INPUT: &str = r#"#.##..##.
 ..#.##.#.
 ##......#
 ##......#
