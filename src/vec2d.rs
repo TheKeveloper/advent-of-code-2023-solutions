@@ -20,9 +20,9 @@ pub struct RowCol {
     pub col: usize,
 }
 
-impl Into<(usize, usize)> for RowCol {
-    fn into(self) -> (usize, usize) {
-        (self.row, self.col)
+impl From<RowCol> for (usize, usize) {
+    fn from(val: RowCol) -> Self {
+        (val.row, val.col)
     }
 }
 
