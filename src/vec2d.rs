@@ -14,7 +14,7 @@ pub struct Cell<'a, T> {
     pub(crate) col: usize,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct RowCol {
     pub row: usize,
     pub col: usize,
