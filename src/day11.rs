@@ -18,7 +18,7 @@ impl Solution for Day11 {
             .map(|val| {
                 let [a, b] = val.as_slice() else { panic!() };
 
-                image.dist(a.coords(), b.coords(), 2)
+                image.dist(a.coords().into(), b.coords().into(), 2)
             })
             .sum::<usize>()
             .to_string()
@@ -38,7 +38,7 @@ impl Solution for Day11P2 {
             .map(|val| {
                 let [a, b] = val.as_slice() else { panic!() };
 
-                image.dist(a.coords(), b.coords(), 1_000_000)
+                image.dist(a.coords().into(), b.coords().into(), 1_000_000)
             })
             .sum::<usize>()
             .to_string()
