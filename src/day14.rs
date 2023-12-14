@@ -119,7 +119,7 @@ impl Grid {
     }
 
     fn move_tile(&mut self, start: &RowCol, end: &RowCol) {
-        let tile = self.tiles.get(start.row, start.col).unwrap().clone();
+        let tile = *self.tiles.get(start.row, start.col).unwrap();
         *self.tiles.get_mut(start.row, start.col).unwrap() = Tile::Empty;
         let dest = self.tiles.get_mut(end.row, end.col).unwrap();
         debug_assert!(dest.is_empty());
@@ -209,11 +209,12 @@ impl Tile {
 
 impl Display for Tile {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        Ok(match self {
+        match self {
             Tile::Empty => f.write_char('.')?,
             Tile::Round => f.write_char('O')?,
             Tile::Square => f.write_char('#')?,
-        })
+        };
+        Ok(())
     }
 }
 
