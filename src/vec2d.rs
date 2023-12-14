@@ -1,7 +1,8 @@
 use std::cmp::Ordering;
 use std::fmt::{Debug, Display, Formatter, Write};
+use std::ops::Deref;
 
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Clone)]
 pub struct Vec2d<T> {
     pub(crate) inner: Vec<Vec<T>>,
 }
@@ -11,6 +12,24 @@ pub struct Cell<'a, T> {
     pub(crate) parent: &'a Vec2d<T>,
     pub(crate) row: usize,
     pub(crate) col: usize,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+pub struct RowCol {
+    pub row: usize,
+    pub col: usize,
+}
+
+impl From<RowCol> for (usize, usize) {
+    fn from(val: RowCol) -> Self {
+        (val.row, val.col)
+    }
+}
+
+impl From<(usize, usize)> for RowCol {
+    fn from((row, col): (usize, usize)) -> Self {
+        RowCol { row, col }
+    }
 }
 
 /// Represents a contiguous set of cells within a specific row
@@ -25,6 +44,20 @@ pub struct CellRowRange<'a, T> {
 impl<'a, T> Clone for Cell<'a, T> {
     fn clone(&self) -> Self {
         self.parent.get_cell(self.row(), self.col()).unwrap()
+    }
+}
+
+impl<'a, T> AsRef<T> for Cell<'a, T> {
+    fn as_ref(&self) -> &T {
+        self.value()
+    }
+}
+
+impl<'a, T> Deref for Cell<'a, T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        self.value()
     }
 }
 
@@ -154,8 +187,11 @@ impl<T> Cell<'_, T> {
         &self.parent.inner[self.row][self.col]
     }
 
-    pub fn coords(&self) -> (usize, usize) {
-        (self.row, self.col)
+    pub fn coords(&self) -> RowCol {
+        RowCol {
+            row: self.row,
+            col: self.col,
+        }
     }
 
     pub fn row(&self) -> usize {
