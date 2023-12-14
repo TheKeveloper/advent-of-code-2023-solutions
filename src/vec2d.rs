@@ -60,6 +60,10 @@ impl<T> Vec2d<T> {
         (0..self.inner.len()).filter_map(move |row| self.get_cell(row, col))
     }
 
+    pub fn get_col(&self, col: usize) -> impl Iterator<Item = &T> {
+        (0..self.inner.len()).filter_map(move |row| self.get(row, col))
+    }
+
     pub fn cells(&self) -> impl Iterator<Item = Cell<T>> {
         self.inner
             .iter()
@@ -89,6 +93,14 @@ impl<T> Vec2d<T> {
                 .map(|row| row.iter().map(&f).collect())
                 .collect(),
         }
+    }
+
+    pub fn num_rows(&self) -> usize {
+        self.inner.len()
+    }
+
+    pub fn first_num_cols(&self) -> usize {
+        self.inner.get(0).map(|row| row.len()).unwrap_or(0)
     }
 }
 
