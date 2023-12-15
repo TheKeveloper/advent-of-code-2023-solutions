@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use itertools::Itertools;
 
 use crate::common::Solution;
@@ -10,21 +12,121 @@ impl Solution for Day15 {
                 line.as_ref()
                     .split(',')
                     .map(|s| s.chars().fold(0, update_hash))
-                    .sum::<u64>()
+                    .sum::<usize>()
             })
-            .sum::<u64>()
+            .sum::<usize>()
             .to_string()
     }
-}
-
-fn update_hash(cur: u64, c: char) -> u64 {
-    ((cur + (c as u64)) * 17) % 256
 }
 
 pub enum Day15P2 {}
 impl Solution for Day15P2 {
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
-        todo!()
+        let mut map = LensHashMap::new();
+        lines
+            .flat_map(|line| {
+                line.as_ref()
+                    .split(',')
+                    .map(|s| s.parse::<LensOp>().unwrap())
+                    .collect_vec()
+            })
+            .for_each(|val| map.perform_op(val));
+
+        map.get_summary().to_string()
+    }
+}
+
+#[derive(Clone, Eq, PartialEq)]
+struct Lens {
+    label: String,
+    focal_length: usize,
+}
+
+enum LensOp {
+    Put(Lens),
+    Remove(String),
+}
+
+pub fn hash_label(label: &str) -> usize {
+    label.chars().fold(0, update_hash)
+}
+
+struct LensHashMap {
+    boxes: Vec<Vec<Lens>>,
+}
+
+impl LensHashMap {
+    pub fn new() -> LensHashMap {
+        LensHashMap {
+            boxes: vec![Vec::new(); 256],
+        }
+    }
+
+    pub fn insert(&mut self, lens: Lens) {
+        let bucket = self.boxes.get_mut(hash_label(lens.label.as_str())).unwrap();
+        let existing = bucket.iter_mut().find(|other| other.label.eq(&lens.label));
+        match existing {
+            None => bucket.push(lens),
+            Some(existing) => existing.focal_length = lens.focal_length,
+        }
+    }
+
+    pub fn remove(&mut self, label: &str) {
+        let bucket = self.boxes.get_mut(hash_label(label)).unwrap();
+        let index = bucket.iter().find_position(|other| other.label.eq(label));
+        if let Some((index, _)) = index {
+            bucket.remove(index);
+        }
+    }
+
+    pub fn perform_op(&mut self, op: LensOp) {
+        match op {
+            LensOp::Put(lens) => self.insert(lens),
+            LensOp::Remove(label) => self.remove(label.as_str()),
+        }
+    }
+
+    pub fn get_summary(&self) -> usize {
+        self.boxes
+            .iter()
+            .enumerate()
+            .flat_map(|(box_n, box_val)| {
+                box_val
+                    .iter()
+                    .enumerate()
+                    .map(move |(index, lens)| (box_n + 1) * (index + 1) * lens.focal_length)
+            })
+            .sum()
+    }
+}
+
+fn update_hash(cur: usize, c: char) -> usize {
+    ((cur + (c as usize)) * 17) % 256
+}
+
+impl FromStr for LensOp {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (index, op) = s
+            .chars()
+            .enumerate()
+            .find(|(_, c)| *c == '=' || *c == '-')
+            .unwrap();
+        match op {
+            '=' => {
+                let (label, focal_length) = s.split_once('=').unwrap();
+                Ok(LensOp::Put(Lens {
+                    label: label.to_string(),
+                    focal_length: focal_length.parse()?,
+                }))
+            }
+            '-' => {
+                let (label, _) = s.split_at(index);
+                Ok(LensOp::Remove(label.to_string()))
+            }
+            _ => panic!(),
+        }
     }
 }
 
@@ -42,6 +144,6 @@ mod test {
 
     #[test]
     fn test_example_p2() {
-        assert_eq!(Day15P2::solve(EXAMPLE_INPUT.lines()), "")
+        assert_eq!(Day15P2::solve(EXAMPLE_INPUT.lines()), "145")
     }
 }
