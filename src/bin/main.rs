@@ -11,6 +11,7 @@ use advent_of_code_2023_solutions::day11::{Day11, Day11P2};
 use advent_of_code_2023_solutions::day12::{Day12, Day12P2};
 use advent_of_code_2023_solutions::day13::{Day13, Day13P2};
 use advent_of_code_2023_solutions::day14::{Day14, Day14P2};
+use advent_of_code_2023_solutions::day16::Day16;
 use advent_of_code_2023_solutions::day2::{Day2, Day2P2};
 use advent_of_code_2023_solutions::day3::{Day3, Day3P2};
 use advent_of_code_2023_solutions::day4::{Day4, Day4P2};
@@ -57,6 +58,7 @@ fn main() {
         (13, 2) => Day13P2::solve(lines),
         (14, 1) => Day14::solve(lines),
         (14, 2) => Day14P2::solve(lines),
+        (16, 1) => Day16::solve(lines),
         _ => unimplemented!(),
     };
     println!("{}", result)
