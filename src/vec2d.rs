@@ -135,6 +135,19 @@ impl<T> Vec2d<T> {
     pub fn first_num_cols(&self) -> usize {
         self.inner.get(0).map(|row| row.len()).unwrap_or(0)
     }
+
+    pub fn top_left_cell(&self) -> Option<Cell<T>> {
+        self.get_cell(0, 0)
+    }
+
+    pub fn bottom_right_cell(&self) -> Option<Cell<T>> {
+        let last_row = self.inner.len() - 1;
+        let Some(last_col) = self.inner.get(last_row).map(|row| row.len() - 1) else {
+            return None;
+        };
+
+        self.get_cell(last_row, last_col)
+    }
 }
 
 impl<T: Copy> Vec2d<T> {
@@ -401,5 +414,24 @@ impl<'a, T> PartialOrd for CellRowRange<'a, T> {
         self.first()
             .partial_cmp(&other.first())
             .or_else(|| self.last().partial_cmp(&other.last()))
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Hash)]
+pub enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
+impl Direction {
+    pub fn next(&self, RowCol { row, col }: RowCol) -> Option<RowCol> {
+        match self {
+            Direction::Up => row.checked_sub(1).map(|row| RowCol { row, col }),
+            Direction::Down => Some(RowCol { row: row + 1, col }),
+            Direction::Left => col.checked_sub(1).map(|col| RowCol { row, col }),
+            Direction::Right => Some(RowCol { row, col: col + 1 }),
+        }
     }
 }
