@@ -25,8 +25,49 @@ pub enum Day16P2 {}
 
 impl Solution for Day16P2 {
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
-        todo!()
+        let tiles = Vec2d::from_lines(lines).map(|c| Tile::from(*c));
+        get_border_and_directions(&tiles)
+            .map(|(start, direction)| {
+                let mut grid: Grid = tiles.map(|tile| (*tile).into()).into();
+
+                grid.travel_and_mark(start, direction);
+
+                grid.count_energized()
+            })
+            .max()
+            .unwrap()
+            .to_string()
     }
+}
+
+fn get_border_and_directions<T>(grid: &Vec2d<T>) -> impl Iterator<Item = (RowCol, Direction)> {
+    let num_rows = grid.num_rows();
+    let num_cols = grid.first_num_cols();
+    (0..num_rows)
+        .flat_map(move |row| {
+            [
+                (RowCol { row, col: 0 }, Direction::Right),
+                (
+                    RowCol {
+                        row,
+                        col: num_cols - 1,
+                    },
+                    Direction::Left,
+                ),
+            ]
+        })
+        .chain((0..num_cols).flat_map(move |col| {
+            [
+                (RowCol { row: 0, col }, Direction::Down),
+                (
+                    RowCol {
+                        row: num_rows - 1,
+                        col,
+                    },
+                    Direction::Up,
+                ),
+            ]
+        }))
 }
 
 struct Grid {
@@ -150,7 +191,7 @@ impl From<char> for Tile {
 #[cfg(test)]
 mod test {
     use crate::common::Solution;
-    use crate::day16::Day16;
+    use crate::day16::{Day16, Day16P2};
 
     const EXAMPLE_INPUT: &'static str = r#".|...\....
 |.-.\.....
@@ -166,5 +207,11 @@ mod test {
     #[test]
     fn test_example() {
         assert_eq!(Day16::solve(EXAMPLE_INPUT.lines()), "46")
+    }
+
+    #[test]
+
+    fn test_example_p2() {
+        assert_eq!(Day16P2::solve(EXAMPLE_INPUT.lines()), "51")
     }
 }
