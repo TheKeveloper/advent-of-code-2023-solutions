@@ -417,7 +417,7 @@ impl<'a, T> PartialOrd for CellRowRange<'a, T> {
     }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum Direction {
     Up,
     Down,
@@ -432,6 +432,15 @@ impl Direction {
             Direction::Down => Some(RowCol { row: row + 1, col }),
             Direction::Left => col.checked_sub(1).map(|col| RowCol { row, col }),
             Direction::Right => Some(RowCol { row, col: col + 1 }),
+        }
+    }
+
+    pub fn opposite(&self) -> Direction {
+        match self {
+            Direction::Up => Direction::Down,
+            Direction::Down => Direction::Up,
+            Direction::Left => Direction::Right,
+            Direction::Right => Direction::Left,
         }
     }
 }

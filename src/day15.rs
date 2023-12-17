@@ -135,7 +135,7 @@ mod test {
     use crate::common::Solution;
     use crate::day15::{Day15, Day15P2};
 
-    const EXAMPLE_INPUT: &'static str = r"rn=1,cm-,qp=3,cm=2,qp-,pc=4,ot=9,ab=5,pc-,pc=6,ot=7";
+    const EXAMPLE_INPUT: &str = r"rn=1,cm-,qp=3,cm=2,qp-,pc=4,ot=9,ab=5,pc-,pc=6,ot=7";
 
     #[test]
     fn test_example() {
