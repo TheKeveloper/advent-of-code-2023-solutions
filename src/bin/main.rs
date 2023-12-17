@@ -13,7 +13,16 @@ use advent_of_code_2023_solutions::day13::{Day13, Day13P2};
 use advent_of_code_2023_solutions::day14::{Day14, Day14P2};
 use advent_of_code_2023_solutions::day15::{Day15, Day15P2};
 use advent_of_code_2023_solutions::day16::{Day16, Day16P2};
+use advent_of_code_2023_solutions::day17::{Day17, Day17P2};
+use advent_of_code_2023_solutions::day18::{Day18, Day18P2};
+use advent_of_code_2023_solutions::day19::{Day19, Day19P2};
 use advent_of_code_2023_solutions::day2::{Day2, Day2P2};
+use advent_of_code_2023_solutions::day20::{Day20, Day20P2};
+use advent_of_code_2023_solutions::day21::{Day21, Day21P2};
+use advent_of_code_2023_solutions::day22::{Day22, Day22P2};
+use advent_of_code_2023_solutions::day23::{Day23, Day23P2};
+use advent_of_code_2023_solutions::day24::{Day24, Day24P2};
+use advent_of_code_2023_solutions::day25::{Day25, Day25P2};
 use advent_of_code_2023_solutions::day3::{Day3, Day3P2};
 use advent_of_code_2023_solutions::day4::{Day4, Day4P2};
 use advent_of_code_2023_solutions::day5::{Day5, Day5P2};
@@ -63,6 +72,24 @@ fn main() {
         (15, 2) => Day15P2::solve(lines),
         (16, 1) => Day16::solve(lines),
         (16, 2) => Day16P2::solve(lines),
+        (17, 1) => Day17::solve(lines),
+        (17, 2) => Day17P2::solve(lines),
+        (18, 1) => Day18::solve(lines),
+        (18, 2) => Day18P2::solve(lines),
+        (19, 1) => Day19::solve(lines),
+        (19, 2) => Day19P2::solve(lines),
+        (20, 1) => Day20::solve(lines),
+        (20, 2) => Day20P2::solve(lines),
+        (21, 1) => Day21::solve(lines),
+        (21, 2) => Day21P2::solve(lines),
+        (22, 1) => Day22::solve(lines),
+        (22, 2) => Day22P2::solve(lines),
+        (23, 1) => Day23::solve(lines),
+        (23, 2) => Day23P2::solve(lines),
+        (24, 1) => Day24::solve(lines),
+        (24, 2) => Day24P2::solve(lines),
+        (25, 1) => Day25::solve(lines),
+        (25, 2) => Day25P2::solve(lines),
         _ => unimplemented!(),
     };
     println!("{}", result)
