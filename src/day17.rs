@@ -50,7 +50,7 @@ impl Grid {
 
         while let Some((node, Reverse(node_dist))) = queue.pop() {
             for neighbor in self.neighbors(&node) {
-                let new_dist = node_dist + (self.value(&neighbor) as usize);
+                let new_dist = node_dist + self.value(&neighbor);
                 match distances.entry(neighbor) {
                     Entry::Occupied(mut occupied) => {
                         if new_dist < *occupied.get() {
@@ -85,7 +85,7 @@ impl Grid {
 
         while let Some((node, Reverse(node_dist))) = queue.pop() {
             for neighbor in self.neighbors_2(&node) {
-                let new_dist = node_dist + (self.value(&neighbor) as usize);
+                let new_dist = node_dist + self.value_2(&neighbor);
                 match distances.entry(neighbor) {
                     Entry::Occupied(mut occupied) => {
                         if new_dist < *occupied.get() {
@@ -103,14 +103,21 @@ impl Grid {
 
         let (_, dist) = distances
             .into_iter()
-            .filter(|(node, _)| self.is_end(node))
+            .filter(|(node, _)| self.is_end(node) && node.direction_count >= 4)
             .min_by_key(|(_, val)| *val)
             .unwrap();
         dist
     }
 
-    pub fn value(&self, node: &DirectionalNode) -> u8 {
-        *self.blocks.get(node.coords.row, node.coords.col).unwrap()
+    pub fn value(&self, node: &DirectionalNode) -> usize {
+        *self.blocks.get(node.coords.row, node.coords.col).unwrap() as usize
+    }
+    pub fn value_2(&self, node: &DirectionalNode) -> usize {
+        if self.is_end(node) && node.direction_count < 4 {
+            usize::MAX / 2
+        } else {
+            *self.blocks.get(node.coords.row, node.coords.col).unwrap() as usize
+        }
     }
 
     fn is_end(&self, node: &DirectionalNode) -> bool {
@@ -180,9 +187,10 @@ impl Grid {
         .iter()
         .filter(|&direction| {
             // avoid reversing direction
-            direction.opposite().ne(&node.direction)
-                && (direction.ne(&node.direction) || node.direction_count < 10)
-                && (direction.eq(&node.direction) || node.direction_count >= 4)
+            node.coords.row == 0 && node.coords.col == 0
+                || (direction.opposite().ne(&node.direction)
+                    && (direction.ne(&node.direction) || node.direction_count < 10)
+                    && (direction.eq(&node.direction) || node.direction_count >= 4))
         })
         .filter_map(|direction| {
             direction.next(node.coords).map(|coords| DirectionalNode {
