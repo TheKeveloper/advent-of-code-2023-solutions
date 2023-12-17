@@ -19,10 +19,8 @@ impl Solution for Day17 {
 pub enum Day17P2 {}
 impl Solution for Day17P2 {
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
-        panic!(
-            "lines: {:?}",
-            lines.map(|s| s.as_ref().to_string()).collect::<Vec<_>>()
-        )
+        let grid = Grid::from_lines(lines);
+        grid.get_shortest_path_2().to_string()
     }
 }
 
@@ -35,7 +33,8 @@ impl Grid {
         Grid {
             blocks: Vec2d::from_lines(lines).map(|c| {
                 c.to_digit(10)
-                    .unwrap_or_else(|| panic!("Expected a digit value: {}", c)) as u8
+                    .unwrap_or_else(|| panic!("Expected a digit value: {}", c))
+                    as u8
             }),
         }
     }
@@ -51,6 +50,41 @@ impl Grid {
 
         while let Some((node, Reverse(node_dist))) = queue.pop() {
             for neighbor in self.neighbors(&node) {
+                let new_dist = node_dist + (self.value(&neighbor) as usize);
+                match distances.entry(neighbor) {
+                    Entry::Occupied(mut occupied) => {
+                        if new_dist < *occupied.get() {
+                            occupied.insert(new_dist);
+                            queue.push_increase(neighbor, Reverse(new_dist));
+                        }
+                    }
+                    Entry::Vacant(vacant) => {
+                        vacant.insert(new_dist);
+                        queue.push_increase(neighbor, Reverse(new_dist));
+                    }
+                }
+            }
+        }
+
+        let (_, dist) = distances
+            .into_iter()
+            .filter(|(node, _)| self.is_end(node))
+            .min_by_key(|(_, val)| *val)
+            .unwrap();
+        dist
+    }
+
+    pub fn get_shortest_path_2(&self) -> usize {
+        // just using Djikstra's algorithm for this
+        let mut queue: PriorityQueue<DirectionalNode, Reverse<usize>> = PriorityQueue::new();
+        let mut distances: HashMap<DirectionalNode, usize> = HashMap::new();
+
+        let starting_node = self.starting_node();
+        queue.push(starting_node, Reverse(0));
+        distances.insert(starting_node, 0);
+
+        while let Some((node, Reverse(node_dist))) = queue.pop() {
+            for neighbor in self.neighbors_2(&node) {
                 let new_dist = node_dist + (self.value(&neighbor) as usize);
                 match distances.entry(neighbor) {
                     Entry::Occupied(mut occupied) => {
@@ -130,6 +164,39 @@ impl Grid {
         })
         .filter(move |next| next.coords.row < num_rows && next.coords.col < num_cols)
     }
+
+    pub fn neighbors_2<'a>(
+        &self,
+        node: &'a DirectionalNode,
+    ) -> impl Iterator<Item = DirectionalNode> + 'a {
+        let num_rows = self.blocks.num_rows();
+        let num_cols = self.blocks.first_num_cols();
+        [
+            Direction::Up,
+            Direction::Left,
+            Direction::Right,
+            Direction::Down,
+        ]
+        .iter()
+        .filter(|&direction| {
+            // avoid reversing direction
+            direction.opposite().ne(&node.direction)
+                && (direction.ne(&node.direction) || node.direction_count < 10)
+                && (direction.eq(&node.direction) || node.direction_count >= 4)
+        })
+        .filter_map(|direction| {
+            direction.next(node.coords).map(|coords| DirectionalNode {
+                direction: *direction,
+                coords,
+                direction_count: if direction.eq(&node.direction) {
+                    node.direction_count + 1
+                } else {
+                    1
+                },
+            })
+        })
+        .filter(move |next| next.coords.row < num_rows && next.coords.col < num_cols)
+    }
 }
 
 #[derive(Eq, PartialEq, Copy, Clone, Hash)]
@@ -163,8 +230,17 @@ mod test {
     }
 
     #[test]
-    #[should_panic]
     fn test_example_p2() {
-        assert_eq!(Day17P2::solve(EXAMPLE_INPUT.lines()), "")
+        assert_eq!(Day17P2::solve(EXAMPLE_INPUT.lines()), "94")
+    }
+
+    #[test]
+    fn test_example_2_p2() {
+        let input = r#"111111111111
+999999999991
+999999999991
+999999999991
+999999999991"#;
+        assert_eq!(Day17P2::solve(input.lines()), "71")
     }
 }
