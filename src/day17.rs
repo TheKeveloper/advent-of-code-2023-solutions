@@ -2,7 +2,6 @@ use std::cmp::Reverse;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
-use itertools::Itertools;
 use priority_queue::PriorityQueue;
 
 use crate::common::Solution;
@@ -47,8 +46,8 @@ impl Grid {
         let mut distances: HashMap<DirectionalNode, usize> = HashMap::new();
 
         let starting_node = self.starting_node();
-        queue.push(starting_node, Reverse(self.value(&starting_node) as usize));
-        distances.insert(starting_node, self.value(&starting_node) as usize);
+        queue.push(starting_node, Reverse(0));
+        distances.insert(starting_node, 0);
 
         while let Some((node, Reverse(node_dist))) = queue.pop() {
             for neighbor in self.neighbors(&node) {
@@ -68,13 +67,12 @@ impl Grid {
             }
         }
 
-        let end_distances = distances
+        let (_, dist) = distances
             .into_iter()
             .filter(|(node, _)| self.is_end(node))
-            .map(|(_, val)| val)
-            .collect_vec();
-        println!("{:?}", end_distances);
-        *end_distances.iter().min().unwrap()
+            .min_by_key(|(_, val)| *val)
+            .unwrap();
+        dist
     }
 
     pub fn value(&self, node: &DirectionalNode) -> u8 {
@@ -115,7 +113,7 @@ impl Grid {
         ]
         .iter()
         .filter(|&direction| {
-            (direction.ne(&node.direction) || node.direction_count <= 3)
+            (direction.ne(&node.direction) || node.direction_count < 3)
                 // avoid reversing direction
                 && direction.opposite().ne(&node.direction)
         })

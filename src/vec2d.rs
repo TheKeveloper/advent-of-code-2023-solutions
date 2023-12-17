@@ -417,7 +417,7 @@ impl<'a, T> PartialOrd for CellRowRange<'a, T> {
     }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum Direction {
     Up,
     Down,
