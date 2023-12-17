@@ -26,7 +26,7 @@ mod test {
     use crate::common::Solution;
     use crate::day23::{Day23, Day23P2};
 
-    const EXAMPLE_INPUT: &'static str = r"";
+    const EXAMPLE_INPUT: &str = r"";
     #[test]
     #[should_panic]
     fn test_example() {

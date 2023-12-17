@@ -35,7 +35,7 @@ impl Grid {
         Grid {
             blocks: Vec2d::from_lines(lines).map(|c| {
                 c.to_digit(10)
-                    .expect(format!("Expected a digit value: {}", c).as_str()) as u8
+                    .unwrap_or_else(|| panic!("Expected a digit value: {}", c)) as u8
             }),
         }
     }
@@ -144,7 +144,7 @@ mod test {
     use crate::common::Solution;
     use crate::day17::{Day17, Day17P2};
 
-    const EXAMPLE_INPUT: &'static str = r"2413432311323
+    const EXAMPLE_INPUT: &str = r"2413432311323
 3215453535623
 3255245654254
 3446585845452
