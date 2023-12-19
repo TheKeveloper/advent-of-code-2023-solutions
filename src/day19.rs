@@ -23,10 +23,8 @@ impl Solution for Day19 {
 pub enum Day19P2 {}
 impl Solution for Day19P2 {
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
-        panic!(
-            "lines: {:?}",
-            lines.map(|s| s.as_ref().to_string()).collect::<Vec<_>>()
-        )
+        let puzzle = Puzzle::from_lines(lines);
+        todo!()
     }
 }
 
@@ -121,6 +119,40 @@ impl Rule {
             Condition::LessThan => part_rating < self.threshold,
         }
     }
+
+    /// returns two ranges, the first satisfying, and the second not
+    pub fn split_satisfying(&self, part_range: &PartRange) -> (PartRange, PartRange) {
+        let Range { min, max } = *part_range.get_range(&self.category);
+        let (satisfying_range, other_range) = match self.condition {
+            Condition::GreaterThan => (
+                Range {
+                    min: std::cmp::max(self.threshold + 1, min),
+                    max,
+                },
+                Range {
+                    min,
+                    max: std::cmp::min(self.threshold, max),
+                },
+            ),
+            Condition::LessThan => (
+                Range {
+                    min,
+                    max: std::cmp::min(self.threshold - 1, max),
+                },
+                Range {
+                    min: std::cmp::max(self.threshold, min),
+                    max,
+                },
+            ),
+        };
+
+        let mut satisfying = part_range.clone();
+        satisfying.ratings.insert(self.category, satisfying_range);
+        let mut other = part_range.clone();
+        other.ratings.insert(self.category, other_range);
+
+        (satisfying, other)
+    }
 }
 
 impl FromStr for Rule {
@@ -160,6 +192,37 @@ impl FromStr for Outcome {
     }
 }
 
+#[derive(Clone, Eq, PartialEq)]
+struct PartRange {
+    ratings: HashMap<Category, Range>,
+}
+
+impl PartRange {
+    pub fn get_range(&self, category: &Category) -> &Range {
+        self.ratings.get(category).unwrap()
+    }
+}
+
+#[derive(Eq, PartialEq, Hash, Clone, Debug)]
+struct Range {
+    min: i64,
+    max: i64,
+}
+
+impl Range {
+    pub fn min(&self) -> i64 {
+        self.min
+    }
+
+    pub fn max(&self) -> i64 {
+        self.max
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.max <= self.min
+    }
+}
+
 struct Part {
     ratings: HashMap<Category, i64>,
 }
@@ -189,7 +252,7 @@ impl Part {
     }
 }
 
-#[derive(Eq, PartialEq, Hash, Debug)]
+#[derive(Eq, PartialEq, Hash, Debug, Clone, Copy)]
 enum Category {
     X,
     M,
@@ -261,8 +324,7 @@ hdj{m>838:A,pv}
     }
 
     #[test]
-    #[should_panic]
     fn test_example_p2() {
-        assert_eq!(Day19P2::solve(EXAMPLE_INPUT.lines()), "")
+        assert_eq!(Day19P2::solve(EXAMPLE_INPUT.lines()), "167409079868000")
     }
 }
