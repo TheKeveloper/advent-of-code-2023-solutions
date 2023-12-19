@@ -18,10 +18,8 @@ impl Solution for Day18 {
 pub enum Day18P2 {}
 impl Solution for Day18P2 {
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
-        panic!(
-            "lines: {:?}",
-            lines.map(|s| s.as_ref().to_string()).collect::<Vec<_>>()
-        )
+        let plan = Plan::from_lines(lines).to_part2();
+        plan.get_area().to_string()
     }
 }
 
@@ -33,6 +31,16 @@ impl Plan {
     pub fn from_lines(lines: impl Iterator<Item = impl AsRef<str>>) -> Self {
         Plan {
             instructions: lines.map(|s| s.as_ref().parse().unwrap()).collect(),
+        }
+    }
+
+    pub fn to_part2(self) -> Self {
+        Plan {
+            instructions: self
+                .instructions
+                .into_iter()
+                .map(|instruction| instruction.to_part2())
+                .collect(),
         }
     }
 
@@ -101,6 +109,30 @@ struct Instruction {
     direction: Direction,
     count: usize,
     color: String,
+}
+
+impl Instruction {
+    pub fn to_part2(self) -> Self {
+        let color = self.color.as_str();
+        let (count, direction) = color.split_at(5);
+
+        let direction = match direction.trim() {
+            "0" => Direction::Right,
+            "1" => Direction::Down,
+            "2" => Direction::Left,
+            "3" => Direction::Up,
+            _ => panic!(
+                "Received invalid direction string: {}",
+                direction.to_string()
+            ),
+        };
+
+        Instruction {
+            count: usize::from_str_radix(count, 16).unwrap(),
+            direction,
+            color: self.color,
+        }
+    }
 }
 
 impl FromStr for Instruction {
@@ -176,6 +208,6 @@ U 2 (#7a21e3)";
 
     #[test]
     fn test_example_p2() {
-        assert_eq!(Day18P2::solve(EXAMPLE_INPUT.lines()), "")
+        assert_eq!(Day18P2::solve(EXAMPLE_INPUT.lines()), "952408144115")
     }
 }
