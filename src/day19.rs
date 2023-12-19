@@ -1,4 +1,7 @@
+use std::collections::HashMap;
 use std::str::FromStr;
+
+use itertools::Itertools;
 
 use crate::common::Solution;
 
@@ -6,10 +9,14 @@ pub enum Day19 {}
 
 impl Solution for Day19 {
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
-        panic!(
-            "lines: {:?}",
-            lines.map(|s| s.as_ref().to_string()).collect::<Vec<_>>()
-        )
+        let puzzle = Puzzle::from_lines(lines);
+        puzzle
+            .parts
+            .iter()
+            .filter(|part| puzzle.get_final_accepted(part))
+            .map(|part| part.ratings.values().sum::<i64>())
+            .sum::<i64>()
+            .to_string()
     }
 }
 
@@ -23,10 +30,58 @@ impl Solution for Day19P2 {
     }
 }
 
+struct Puzzle {
+    workflows: HashMap<String, Workflow>,
+    parts: Vec<Part>,
+}
+
+impl Puzzle {
+    pub fn from_lines(lines: impl Iterator<Item = impl AsRef<str>>) -> Puzzle {
+        let combined = lines.map(|s| s.as_ref().to_string()).join("\n");
+        let (workflows, parts) = combined.split_once("\n\n").unwrap();
+        Puzzle {
+            workflows: workflows
+                .lines()
+                .map(|line| line.parse::<Workflow>().unwrap())
+                .map(|workflow| (workflow.name.to_string(), workflow))
+                .collect(),
+            parts: parts.lines().map(|line| line.parse().unwrap()).collect(),
+        }
+    }
+
+    fn get_final_accepted(&self, part: &Part) -> bool {
+        let mut outcome: &Outcome = self.workflows.get("in").unwrap().get_outcome(part);
+
+        loop {
+            match outcome {
+                Outcome::Accepted => {
+                    return true;
+                }
+                Outcome::Rejected => {
+                    return false;
+                }
+                Outcome::Next(next) => {
+                    outcome = self.workflows.get(next).unwrap().get_outcome(part);
+                }
+            }
+        }
+    }
+}
+
 struct Workflow {
     name: String,
     rules: Vec<Rule>,
     default_outcome: Outcome,
+}
+
+impl Workflow {
+    pub fn get_outcome(&self, part: &Part) -> &Outcome {
+        self.rules
+            .iter()
+            .find(|rule| rule.satisfies(part))
+            .map(|rule| &rule.outcome)
+            .unwrap_or_else(|| &self.default_outcome)
+    }
 }
 
 impl FromStr for Workflow {
@@ -58,6 +113,16 @@ struct Rule {
     outcome: Outcome,
 }
 
+impl Rule {
+    pub fn satisfies(&self, part: &Part) -> bool {
+        let part_rating = part.get_rating(&self.category);
+        match self.condition {
+            Condition::GreaterThan => part_rating > self.threshold,
+            Condition::LessThan => part_rating < self.threshold,
+        }
+    }
+}
+
 impl FromStr for Rule {
     type Err = anyhow::Error;
 
@@ -76,6 +141,7 @@ impl FromStr for Rule {
     }
 }
 
+#[derive(Eq, PartialEq, Clone, Debug, Hash)]
 enum Outcome {
     Accepted,
     Rejected,
@@ -94,6 +160,36 @@ impl FromStr for Outcome {
     }
 }
 
+struct Part {
+    ratings: HashMap<Category, i64>,
+}
+
+impl FromStr for Part {
+    type Err = anyhow::Error;
+
+    fn from_str(line: &str) -> Result<Self, Self::Err> {
+        let line = line.trim_start_matches('{').trim_end_matches('}');
+        Ok(Part {
+            ratings: line
+                .split(',')
+                .map(|s| {
+                    let (category, value) = s.split_once('=').ok_or_else(|| {
+                        anyhow::Error::msg("Failed to parse ratings").context(s.to_string())
+                    })?;
+                    Ok((category.parse::<Category>()?, value.parse::<i64>()?))
+                })
+                .collect::<Result<HashMap<_, _>, anyhow::Error>>()?,
+        })
+    }
+}
+
+impl Part {
+    pub fn get_rating(&self, category: &Category) -> i64 {
+        *self.ratings.get(category).unwrap()
+    }
+}
+
+#[derive(Eq, PartialEq, Hash, Debug)]
 enum Category {
     X,
     M,
@@ -142,11 +238,26 @@ mod test {
     use crate::common::Solution;
     use crate::day19::{Day19, Day19P2};
 
-    const EXAMPLE_INPUT: &str = r"";
+    const EXAMPLE_INPUT: &str = r"px{a<2006:qkq,m>2090:A,rfg}
+pv{a>1716:R,A}
+lnx{m>1548:A,A}
+rfg{s<537:gd,x>2440:R,A}
+qs{s>3448:A,lnx}
+qkq{x<1416:A,crn}
+crn{x>2662:A,R}
+in{s<1351:px,qqz}
+qqz{s>2770:qs,m<1801:hdj,R}
+gd{a>3333:R,R}
+hdj{m>838:A,pv}
+
+{x=787,m=2655,a=1222,s=2876}
+{x=1679,m=44,a=2067,s=496}
+{x=2036,m=264,a=79,s=2244}
+{x=2461,m=1339,a=466,s=291}
+{x=2127,m=1623,a=2188,s=1013}";
     #[test]
-    #[should_panic]
     fn test_example() {
-        assert_eq!(Day19::solve(EXAMPLE_INPUT.lines()), "")
+        assert_eq!(Day19::solve(EXAMPLE_INPUT.lines()), "19114")
     }
 
     #[test]
