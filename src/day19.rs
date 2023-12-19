@@ -24,7 +24,12 @@ pub enum Day19P2 {}
 impl Solution for Day19P2 {
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
         let puzzle = Puzzle::from_lines(lines);
-        todo!()
+        puzzle
+            .count_satisfying(
+                &PartRange::with_values(Range { min: 1, max: 4000 }),
+                puzzle.workflows.get("in").unwrap(),
+            )
+            .to_string()
     }
 }
 
@@ -63,6 +68,33 @@ impl Puzzle {
                 }
             }
         }
+    }
+
+    pub fn count_satisfying(&self, range: &PartRange, workflow: &Workflow) -> usize {
+        let mut count = 0;
+        let mut remaining = range.clone();
+        for rule in &workflow.rules {
+            let (satisfying, other) = rule.split_satisfying(&remaining);
+            match &rule.outcome {
+                Outcome::Accepted => count += satisfying.size(),
+                Outcome::Rejected => {}
+                Outcome::Next(next) => {
+                    let next = self.workflows.get(next).unwrap();
+                    count += self.count_satisfying(&satisfying, next);
+                }
+            }
+            remaining = other.clone();
+        }
+        match &workflow.default_outcome {
+            Outcome::Accepted => count += remaining.size(),
+            Outcome::Rejected => {}
+            Outcome::Next(next) => {
+                let next = self.workflows.get(next).unwrap();
+                count += self.count_satisfying(&remaining, next);
+            }
+        }
+
+        count
     }
 }
 
@@ -201,25 +233,38 @@ impl PartRange {
     pub fn get_range(&self, category: &Category) -> &Range {
         self.ratings.get(category).unwrap()
     }
+
+    pub fn size(&self) -> usize {
+        self.ratings.values().map(|val| val.size()).product()
+    }
+
+    pub fn with_values(range: Range) -> Self {
+        let mut ratings = HashMap::new();
+        ratings.insert(Category::X, range);
+        ratings.insert(Category::M, range);
+        ratings.insert(Category::A, range);
+        ratings.insert(Category::S, range);
+        PartRange { ratings }
+    }
 }
 
-#[derive(Eq, PartialEq, Hash, Clone, Debug)]
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 struct Range {
     min: i64,
     max: i64,
 }
 
 impl Range {
-    pub fn min(&self) -> i64 {
-        self.min
-    }
-
-    pub fn max(&self) -> i64 {
-        self.max
-    }
-
     pub fn is_empty(&self) -> bool {
-        self.max <= self.min
+        self.max < self.min
+    }
+
+    pub fn size(&self) -> usize {
+        if self.is_empty() {
+            0
+        } else {
+            (self.max - self.min + 1) as usize
+        }
     }
 }
 
