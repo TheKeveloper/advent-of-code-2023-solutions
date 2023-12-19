@@ -18,7 +18,7 @@ impl Solution for Day18 {
 pub enum Day18P2 {}
 impl Solution for Day18P2 {
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
-        let plan = Plan::from_lines(lines).to_part2();
+        let plan = Plan::from_lines(lines).part2();
         plan.get_area().to_string()
     }
 }
@@ -34,12 +34,12 @@ impl Plan {
         }
     }
 
-    pub fn to_part2(self) -> Self {
+    pub fn part2(self) -> Self {
         Plan {
             instructions: self
                 .instructions
                 .into_iter()
-                .map(|instruction| instruction.to_part2())
+                .map(|instruction| instruction.part2())
                 .collect(),
         }
     }
@@ -82,8 +82,8 @@ struct SignedRowCol {
 
 impl SignedRowCol {
     pub fn move_in_direction(&self, direction: &Direction, steps: isize) -> SignedRowCol {
-        let row = self.row.clone();
-        let col = self.col.clone();
+        let row = self.row;
+        let col = self.col;
         match direction {
             Direction::Up => SignedRowCol {
                 row: row.sub(steps),
@@ -112,7 +112,7 @@ struct Instruction {
 }
 
 impl Instruction {
-    pub fn to_part2(self) -> Self {
+    pub fn part2(&self) -> Self {
         let color = self.color.as_str();
         let (count, direction) = color.split_at(5);
 
@@ -121,16 +121,13 @@ impl Instruction {
             "1" => Direction::Down,
             "2" => Direction::Left,
             "3" => Direction::Up,
-            _ => panic!(
-                "Received invalid direction string: {}",
-                direction.to_string()
-            ),
+            _ => panic!("Received invalid direction string: {}", direction),
         };
 
         Instruction {
             count: usize::from_str_radix(count, 16).unwrap(),
             direction,
-            color: self.color,
+            color: self.color.clone(),
         }
     }
 }
