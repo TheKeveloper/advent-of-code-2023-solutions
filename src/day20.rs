@@ -21,7 +21,7 @@ impl Solution for Day20 {
 pub enum Day20P2 {}
 impl Solution for Day20P2 {
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
-        let mut system = System::from_lines(lines);
+        let system = System::from_lines(lines);
         system.presses_until_rx().to_string()
     }
 }
@@ -105,7 +105,7 @@ impl System {
                 unreachable!()
             };
 
-            for (name, _) in &conjunction.inputs {
+            for name in conjunction.inputs.keys() {
                 if self.modules.get(name).unwrap().sent_high_count >= 1 {
                     counts_until_high
                         .entry(name.to_string())
@@ -387,6 +387,6 @@ broadcaster -> gn, gb, rb, df
 %pf -> gd
 &vd -> rx
 %ch -> qr"#;
-        Day20P2::solve(input.lines());
+        assert_eq!(Day20P2::solve(input.lines()), "228300182686739");
     }
 }
