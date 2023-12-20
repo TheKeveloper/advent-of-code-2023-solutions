@@ -71,6 +71,9 @@ impl System {
                 continue;
             };
             for next in module.handle_pulse(message.source.clone(), message.pulse) {
+                if next.pulse.is_high() {
+                    module.sent_high_count += 1;
+                }
                 queue.push_back(next);
             }
         }
@@ -102,8 +105,8 @@ impl System {
                 unreachable!()
             };
 
-            for (name, pulse) in &conjunction.inputs {
-                if pulse.is_high() {
+            for (name, _) in &conjunction.inputs {
+                if self.modules.get(name).unwrap().sent_high_count >= 1 {
                     counts_until_high
                         .entry(name.to_string())
                         .or_insert(press_count);
@@ -124,6 +127,7 @@ struct Module {
     name: String,
     module_type: ModuleType,
     outputs: Vec<String>,
+    sent_high_count: usize,
 }
 
 impl Module {
@@ -209,6 +213,7 @@ impl FromStr for Module {
             module_type,
             name,
             outputs,
+            sent_high_count: 0,
         })
     }
 }
@@ -302,7 +307,7 @@ impl Sum for PulseCount {
 #[cfg(test)]
 mod test {
     use crate::common::Solution;
-    use crate::day20::Day20;
+    use crate::day20::{Day20, Day20P2};
 
     const FIRST_EXAMPLE: &str = r"broadcaster -> a, b, c
 %a -> b
@@ -320,5 +325,68 @@ mod test {
     fn test_example() {
         assert_eq!(Day20::solve(FIRST_EXAMPLE.lines()), "32000000");
         assert_eq!(Day20::solve(SECOND_EXAMPLE.lines()), "11687500");
+    }
+
+    #[test]
+    fn test_real_p2() {
+        let input = r#"%jb -> fz
+%xz -> ck, bg
+%xm -> qt, cs
+%df -> hc, lq
+%mt -> sx
+%fr -> ks, hc
+%tn -> pf
+%gt -> pp, kb
+%jn -> ck, nz
+%td -> kz
+&rd -> vd
+%pp -> gv, kb
+&qt -> jb, vx, bt, gh, td, gb
+%ms -> xz
+%vx -> fp
+%rb -> ck, mt
+%nz -> hh
+%fp -> rp, qt
+%gd -> gc
+%gv -> kb
+%nl -> cc, hc
+%cs -> qt
+%kz -> jb, qt
+%vg -> fr, hc
+%zq -> qt, xm
+%pv -> ps
+&bt -> vd
+%ps -> kb, rf
+%hh -> ck, ms
+broadcaster -> gn, gb, rb, df
+%gh -> td
+%rf -> kb, nm
+%rp -> qt, gh
+%gc -> kb, pv
+%gb -> vx, qt
+%rq -> ck, ts
+%nm -> gt
+%gn -> kb, tn
+&ck -> nz, fv, rb, sx, ms, mt
+&fv -> vd
+%cc -> vg
+%bg -> ck, rq
+&hc -> qr, ch, df, dj, cc, rd
+%qr -> dj
+%gq -> hc, ch
+&pr -> vd
+%ks -> lc, hc
+%dj -> nl
+%fz -> qt, zq
+%lq -> gq, hc
+&kb -> pv, pr, tn, nm, pf, gn, gd
+%ts -> ck
+%lc -> hc
+%jl -> ck, jn
+%sx -> jl
+%pf -> gd
+&vd -> rx
+%ch -> qr"#;
+        Day20P2::solve(input.lines());
     }
 }
