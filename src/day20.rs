@@ -1,7 +1,9 @@
 use std::collections::{HashMap, VecDeque};
 use std::iter::Sum;
-use std::ops::{Add};
+use std::ops::Add;
 use std::str::FromStr;
+
+use itertools::Itertools;
 
 use crate::common::Solution;
 
@@ -19,10 +21,8 @@ impl Solution for Day20 {
 pub enum Day20P2 {}
 impl Solution for Day20P2 {
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
-        panic!(
-            "lines: {:?}",
-            lines.map(|s| s.as_ref().to_string()).collect::<Vec<_>>()
-        )
+        let mut system = System::from_lines(lines);
+        system.presses_until_rx().to_string()
     }
 }
 
@@ -77,6 +77,46 @@ impl System {
 
         count
     }
+
+    pub fn presses_until_rx(mut self) -> usize {
+        // inspected the input, rx has exactly one input, that is a conjunction
+        let rx_input_name: String = self
+            .modules
+            .values()
+            .filter(|module| module.outputs.iter().any(|s| s == "rx"))
+            .exactly_one()
+            .unwrap()
+            .name
+            .clone();
+
+        let mut counts_until_high: HashMap<String, usize> = HashMap::new();
+
+        let mut press_count: usize = 0;
+
+        loop {
+            self.press_button();
+            press_count += 1;
+
+            let rx_input = self.modules.get(&rx_input_name).unwrap();
+            let ModuleType::Conjunction(conjunction) = &rx_input.module_type else {
+                unreachable!()
+            };
+
+            for (name, pulse) in &conjunction.inputs {
+                if pulse.is_high() {
+                    counts_until_high
+                        .entry(name.to_string())
+                        .or_insert(press_count);
+                }
+            }
+
+            if counts_until_high.len() == conjunction.inputs.len() {
+                return counts_until_high
+                    .values()
+                    .fold(1, |a, b| num::integer::lcm(a, *b));
+            }
+        }
+    }
 }
 
 #[derive(Eq, PartialEq, Clone, Debug)]
@@ -101,11 +141,7 @@ impl Module {
                 .collect(),
             ModuleType::Conjunction(conjunction) => {
                 conjunction.inputs.insert(source, pulse).unwrap();
-                let output_pulse = if conjunction.inputs.values().all(|pulse| pulse.is_high()) {
-                    Pulse::Low
-                } else {
-                    Pulse::High
-                };
+                let output_pulse = conjunction.get_pulse();
                 self.outputs
                     .iter()
                     .map(move |out| Message {
@@ -189,6 +225,16 @@ struct Conjunction {
     inputs: HashMap<String, Pulse>,
 }
 
+impl Conjunction {
+    pub fn get_pulse(&self) -> Pulse {
+        if self.inputs.values().all(|pulse| pulse.is_high()) {
+            Pulse::Low
+        } else {
+            Pulse::High
+        }
+    }
+}
+
 #[derive(Eq, PartialEq, Clone, Hash, Debug, Default)]
 struct FlipFlop {
     is_on: bool,
@@ -256,7 +302,7 @@ impl Sum for PulseCount {
 #[cfg(test)]
 mod test {
     use crate::common::Solution;
-    use crate::day20::{Day20, Day20P2};
+    use crate::day20::Day20;
 
     const FIRST_EXAMPLE: &str = r"broadcaster -> a, b, c
 %a -> b
@@ -274,11 +320,5 @@ mod test {
     fn test_example() {
         assert_eq!(Day20::solve(FIRST_EXAMPLE.lines()), "32000000");
         assert_eq!(Day20::solve(SECOND_EXAMPLE.lines()), "11687500");
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_example_p2() {
-        assert_eq!(Day20P2::solve(FIRST_EXAMPLE.lines()), "")
     }
 }
