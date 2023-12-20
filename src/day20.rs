@@ -1,5 +1,6 @@
 use std::collections::{HashMap, VecDeque};
-use std::ops::Add;
+use std::iter::Sum;
+use std::ops::{Add, AddAssign};
 use std::str::FromStr;
 
 use crate::common::Solution;
@@ -8,10 +9,10 @@ pub enum Day20 {}
 
 impl Solution for Day20 {
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
-        panic!(
-            "lines: {:?}",
-            lines.map(|s| s.as_ref().to_string()).collect::<Vec<_>>()
-        )
+        let mut system = System::from_lines(lines);
+        let count: PulseCount = (0..1000).map(|_| system.press_button()).sum::<PulseCount>();
+
+        (count.high * count.low).to_string()
     }
 }
 
@@ -27,7 +28,6 @@ impl Solution for Day20P2 {
 
 struct System {
     modules: HashMap<String, Module>,
-    messages: VecDeque<Message>,
 }
 
 impl System {
@@ -52,13 +52,33 @@ impl System {
             }
         }
 
-        System {
-            modules,
-            messages: VecDeque::new(),
-        }
+        System { modules }
     }
 
-    pub fn handle_message(&mut self, _message: &Message) {}
+    pub fn press_button(&mut self) -> PulseCount {
+        let mut queue: VecDeque<Message> = VecDeque::new();
+        queue.push_back(Message {
+            source: "button".to_string(),
+            destination: "broadcaster".to_string(),
+            pulse: Pulse::Low,
+        });
+
+        let mut count = PulseCount::default();
+
+        while let Some(message) = queue.pop_front() {
+            count.update(&message.pulse);
+            let Some(module) = self.modules.get_mut(&message.destination) else {
+                continue;
+            };
+            for next in module.handle_pulse(message.source.clone(), message.pulse) {
+                queue.push_back(next);
+            }
+        }
+
+        count
+    }
+
+    fn handle_message_inner(&mut self, _message: &Message) {}
 }
 
 #[derive(Eq, PartialEq, Clone, Debug)]
@@ -200,16 +220,21 @@ impl Pulse {
     pub fn is_high(&self) -> bool {
         matches!(self, Pulse::High)
     }
-
-    pub fn is_low(&self) -> bool {
-        matches!(self, Pulse::Low)
-    }
 }
 
-#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug, Default)]
 struct PulseCount {
     high: usize,
     low: usize,
+}
+
+impl PulseCount {
+    pub fn update(&mut self, pulse: &Pulse) {
+        match pulse {
+            Pulse::High => self.high += 1,
+            Pulse::Low => self.low += 1,
+        }
+    }
 }
 
 impl Add for PulseCount {
@@ -220,6 +245,13 @@ impl Add for PulseCount {
             high: self.high + rhs.high,
             low: self.low + rhs.low,
         }
+    }
+}
+
+impl Sum for PulseCount {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.reduce(|acc, cur| acc + cur)
+            .unwrap_or(PulseCount::default())
     }
 }
 
@@ -241,7 +273,6 @@ mod test {
 &con -> output"#;
 
     #[test]
-    #[should_panic]
     fn test_example() {
         assert_eq!(Day20::solve(FIRST_EXAMPLE.lines()), "32000000");
         assert_eq!(Day20::solve(SECOND_EXAMPLE.lines()), "11687500");
