@@ -77,8 +77,6 @@ impl System {
 
         count
     }
-
-    fn handle_message_inner(&mut self, _message: &Message) {}
 }
 
 #[derive(Eq, PartialEq, Clone, Debug)]
@@ -102,11 +100,11 @@ impl Module {
                 })
                 .collect(),
             ModuleType::Conjunction(conjunction) => {
-                conjunction.inputs.insert(source, pulse);
+                conjunction.inputs.insert(source, pulse).unwrap();
                 let output_pulse = if conjunction.inputs.values().all(|pulse| pulse.is_high()) {
-                    Pulse::High
-                } else {
                     Pulse::Low
+                } else {
+                    Pulse::High
                 };
                 self.outputs
                     .iter()
