@@ -42,14 +42,12 @@ impl System {
         for name in names {
             let outputs = modules.get(name.as_str()).unwrap().outputs.clone();
             for output in outputs {
-                match modules.get_mut(&output) {
-                    Some(Module {
-                        module_type: ModuleType::Conjunction(conjunction),
-                        ..
-                    }) => {
-                        conjunction.inputs.insert(name.clone(), Pulse::Low);
-                    }
-                    _ => {}
+                if let Some(Module {
+                    module_type: ModuleType::Conjunction(conjunction),
+                    ..
+                }) = modules.get_mut(&output)
+                {
+                    conjunction.inputs.insert(name.clone(), Pulse::Low);
                 }
             }
         }
@@ -60,7 +58,7 @@ impl System {
         }
     }
 
-    pub fn handle_message(&mut self, message: &Message) {}
+    pub fn handle_message(&mut self, _message: &Message) {}
 }
 
 #[derive(Eq, PartialEq, Clone, Debug)]
@@ -80,7 +78,7 @@ impl Module {
                 .map(move |out| Message {
                     source: name.clone(),
                     destination: out.clone(),
-                    pulse: pulse,
+                    pulse,
                 })
                 .collect(),
             ModuleType::Conjunction(conjunction) => {
