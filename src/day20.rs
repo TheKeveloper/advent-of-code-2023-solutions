@@ -1,3 +1,7 @@
+use std::collections::{HashMap, VecDeque};
+use std::ops::Add;
+use std::str::FromStr;
+
 use crate::common::Solution;
 
 pub enum Day20 {}
@@ -21,21 +25,233 @@ impl Solution for Day20P2 {
     }
 }
 
+struct System {
+    modules: HashMap<String, Module>,
+    messages: VecDeque<Message>,
+}
+
+impl System {
+    pub fn from_lines(lines: impl Iterator<Item = impl AsRef<str>>) -> System {
+        let mut modules: HashMap<String, Module> = lines
+            .map(|s| s.as_ref().parse::<Module>().unwrap())
+            .map(|module| (module.name.clone(), module))
+            .collect();
+        let names = modules.keys().map(|s| s.to_string()).collect::<Vec<_>>();
+
+        // we need to prepopulate the inputs for the conjunctions so we can check if all are on
+        for name in names {
+            let outputs = modules.get(name.as_str()).unwrap().outputs.clone();
+            for output in outputs {
+                match modules.get_mut(&output) {
+                    Some(Module {
+                        module_type: ModuleType::Conjunction(conjunction),
+                        ..
+                    }) => {
+                        conjunction.inputs.insert(name.clone(), Pulse::Low);
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        System {
+            modules,
+            messages: VecDeque::new(),
+        }
+    }
+
+    pub fn handle_message(&mut self, message: &Message) {}
+}
+
+#[derive(Eq, PartialEq, Clone, Debug)]
+struct Module {
+    name: String,
+    module_type: ModuleType,
+    outputs: Vec<String>,
+}
+
+impl Module {
+    pub fn handle_pulse(&mut self, source: String, pulse: Pulse) -> Vec<Message> {
+        let name = &self.name;
+        match &mut self.module_type {
+            ModuleType::Broadcaster => self
+                .outputs
+                .iter()
+                .map(move |out| Message {
+                    source: name.clone(),
+                    destination: out.clone(),
+                    pulse: pulse,
+                })
+                .collect(),
+            ModuleType::Conjunction(conjunction) => {
+                conjunction.inputs.insert(source, pulse);
+                let output_pulse = if conjunction.inputs.values().all(|pulse| pulse.is_high()) {
+                    Pulse::High
+                } else {
+                    Pulse::Low
+                };
+                self.outputs
+                    .iter()
+                    .map(move |out| Message {
+                        source: name.clone(),
+                        destination: out.clone(),
+                        pulse: output_pulse,
+                    })
+                    .collect()
+            }
+            ModuleType::FlipFlop(flipflop) => match pulse {
+                Pulse::High => vec![],
+                Pulse::Low => {
+                    if flipflop.toggle() {
+                        self.outputs
+                            .iter()
+                            .map(move |out| Message {
+                                source: name.clone(),
+                                destination: out.clone(),
+                                pulse: Pulse::High,
+                            })
+                            .collect()
+                    } else {
+                        self.outputs
+                            .iter()
+                            .map(move |out| Message {
+                                source: name.clone(),
+                                destination: out.clone(),
+                                pulse: Pulse::Low,
+                            })
+                            .collect()
+                    }
+                }
+            },
+        }
+    }
+}
+
+impl FromStr for Module {
+    type Err = anyhow::Error;
+
+    fn from_str(line: &str) -> Result<Self, Self::Err> {
+        let (first, outputs) = line.split_once(" -> ").ok_or_else(|| {
+            anyhow::Error::msg("Could not parse module from line").context(line.to_string())
+        })?;
+
+        let (module_type, name): (ModuleType, String) = match first.trim().as_bytes() {
+            [b'&', name @ ..] => (
+                ModuleType::Conjunction(Conjunction::default()),
+                String::from_utf8_lossy(name).to_string(),
+            ),
+            [b'%', name @ ..] => (
+                ModuleType::FlipFlop(FlipFlop::default()),
+                String::from_utf8_lossy(name).to_string(),
+            ),
+            [b'b', b'r', b'o', b'a', b'd', b'c', b'a', b's', b't', b'e', b'r'] => {
+                (ModuleType::Broadcaster, "broadcaster".to_string())
+            }
+            _ => {
+                return Err(anyhow::Error::msg("Invalid module received").context(line.to_string()))
+            }
+        };
+
+        let outputs = outputs.split(", ").map(|s| s.to_string()).collect();
+        Ok(Module {
+            module_type,
+            name,
+            outputs,
+        })
+    }
+}
+
+#[derive(Eq, PartialEq, Clone, Debug)]
+enum ModuleType {
+    Conjunction(Conjunction),
+    FlipFlop(FlipFlop),
+    Broadcaster,
+}
+
+#[derive(Eq, PartialEq, Clone, Debug, Default)]
+struct Conjunction {
+    inputs: HashMap<String, Pulse>,
+}
+
+#[derive(Eq, PartialEq, Clone, Hash, Debug, Default)]
+struct FlipFlop {
+    is_on: bool,
+}
+
+impl FlipFlop {
+    pub fn toggle(&mut self) -> bool {
+        self.is_on = !self.is_on;
+        self.is_on
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Debug)]
+struct Message {
+    source: String,
+    pulse: Pulse,
+    destination: String,
+}
+
+#[derive(Eq, PartialEq, Clone, Copy, Hash, Debug)]
+enum Pulse {
+    High,
+    Low,
+}
+
+impl Pulse {
+    pub fn is_high(&self) -> bool {
+        matches!(self, Pulse::High)
+    }
+
+    pub fn is_low(&self) -> bool {
+        matches!(self, Pulse::Low)
+    }
+}
+
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
+struct PulseCount {
+    high: usize,
+    low: usize,
+}
+
+impl Add for PulseCount {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        PulseCount {
+            high: self.high + rhs.high,
+            low: self.low + rhs.low,
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::common::Solution;
     use crate::day20::{Day20, Day20P2};
 
-    const EXAMPLE_INPUT: &str = r"";
+    const FIRST_EXAMPLE: &str = r"broadcaster -> a, b, c
+%a -> b
+%b -> c
+%c -> inv
+&inv -> a";
+
+    const SECOND_EXAMPLE: &str = r#"broadcaster -> a
+%a -> inv, con
+&inv -> b
+%b -> con
+&con -> output"#;
+
     #[test]
     #[should_panic]
     fn test_example() {
-        assert_eq!(Day20::solve(EXAMPLE_INPUT.lines()), "")
+        assert_eq!(Day20::solve(FIRST_EXAMPLE.lines()), "32000000");
+        assert_eq!(Day20::solve(SECOND_EXAMPLE.lines()), "11687500");
     }
 
     #[test]
     #[should_panic]
     fn test_example_p2() {
-        assert_eq!(Day20P2::solve(EXAMPLE_INPUT.lines()), "")
+        assert_eq!(Day20P2::solve(FIRST_EXAMPLE.lines()), "")
     }
 }
