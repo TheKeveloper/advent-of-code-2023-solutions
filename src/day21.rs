@@ -72,7 +72,7 @@ impl Grid {
         set
     }
 
-    pub fn start_reachable_n_steps(&self, steps: usize) -> usize {
+    fn start_reachable_n_steps(&self, steps: usize) -> usize {
         let mut reachable = HashSet::new();
         reachable.insert(self.get_start());
 
@@ -119,6 +119,7 @@ impl InfiniteGrid {
         set
     }
 
+    #[allow(dead_code)]
     pub fn start_reachable_n_steps(&self, steps: usize) -> usize {
         let mut reachable = HashSet::new();
         reachable.insert(self.get_start().into());
@@ -133,7 +134,7 @@ impl InfiniteGrid {
     fn get_value_on_grid(&self, point: &Point) -> Tile {
         let row = point.row.rem_euclid(self.tiles.num_rows() as i64);
         let col = point.col.rem_euclid(self.tiles.first_num_cols() as i64);
-        self.tiles.get(row as usize, col as usize).unwrap().clone()
+        *self.tiles.get(row as usize, col as usize).unwrap()
     }
 }
 
