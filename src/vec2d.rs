@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 use std::fmt::{Debug, Display, Formatter, Write};
+use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 
 #[derive(Eq, PartialEq, Clone)]
@@ -67,6 +68,13 @@ impl<'a, T> PartialEq for Cell<'a, T> {
     }
 }
 impl<'a, T> Eq for Cell<'a, T> {}
+
+impl<'a, T> Hash for Cell<'a, T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.col.hash(state);
+        self.row.hash(state);
+    }
+}
 
 impl<T> Vec2d<T> {
     pub fn get(&self, row: usize, col: usize) -> Option<&T> {
@@ -229,6 +237,17 @@ impl<T> Cell<'_, T> {
 
     pub fn get_right(&self) -> Option<Cell<T>> {
         self.get_diff(0, 1)
+    }
+
+    pub fn cardinal_neighbors(&self) -> impl Iterator<Item = Cell<T>> {
+        [
+            self.get_top(),
+            self.get_right(),
+            self.get_below(),
+            self.get_left(),
+        ]
+        .into_iter()
+        .flatten()
     }
 
     pub fn neighbors(&self) -> impl Iterator<Item = Cell<T>> {
