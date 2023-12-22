@@ -41,18 +41,13 @@ impl Snapshot {
     fn get_supporters(&self) -> Vec<HashSet<usize>> {
         let mut supporters: Vec<HashSet<usize>> = vec![HashSet::new(); self.bricks.len()];
 
-        for i in 0..self.bricks.len() {
-            for j in 0..self.bricks.len() {
+        for (i, brick) in self.bricks.iter().enumerate() {
+            for (j, other) in self.bricks.iter().enumerate() {
                 if i == j {
                     continue;
                 }
 
-                if self
-                    .bricks
-                    .get(j)
-                    .unwrap()
-                    .supporting(self.bricks.get(i).unwrap())
-                {
+                if other.supporting(brick) {
                     supporters[i].insert(j);
                 }
             }
@@ -83,8 +78,8 @@ impl Snapshot {
                     let supporters = supporters.get_mut(j).unwrap();
                     let mut any_removed = false;
                     for supporter in supporters.clone().iter() {
-                        if removed.contains(&&supporter) {
-                            supporters.remove(&supporter);
+                        if removed.contains(supporter) {
+                            supporters.remove(supporter);
                             any_removed = true;
                         }
                     }
@@ -258,7 +253,7 @@ impl Brick {
                 .map(|z| self.first.with_z(z))
                 .collect()
         } else {
-            vec![self.first.clone()]
+            vec![self.first]
         }
     }
 }
