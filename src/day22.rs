@@ -106,7 +106,7 @@ impl Snapshot {
             let lowest_possible = self
                 .bricks
                 .iter()
-                .filter(|&other| other.intersects_naive(brick))
+                .filter(|&other| other.intersects(brick))
                 .filter(|&other| other.ne(brick))
                 .map(|other| other.highest_point())
                 .filter(|&highest_point| highest_point < lowest_point)
@@ -121,7 +121,7 @@ impl Snapshot {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Hash)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug)]
 struct Brick {
     first: Position,
     second: Position,
@@ -183,8 +183,7 @@ impl Brick {
                 let (self_min, self_max) = self.get_min_max_on_axis(&self_axis);
                 let (other_min, other_max) = other.get_min_max_on_axis(&other_axis);
 
-                (other_min >= self_min && other_min <= self_max)
-                    || (other_max >= self_min && other_max <= self_max)
+                self_min <= other_max && self_max >= other_min
             }
             (self_axis, other_axis) => {
                 let self_fixed = self.first.get(&other_axis);
@@ -270,7 +269,7 @@ impl FromStr for Brick {
     }
 }
 
-#[derive(Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Debug)]
 struct Position {
     x: i64,
     y: i64,
@@ -375,10 +374,17 @@ mod test {
     }
 
     #[test]
+    fn test_intersects_2() {
+        let a = Brick::from_str("6,3,1~6,7,1").unwrap();
+        let b = Brick::from_str("6,5,2~6,6,2").unwrap();
+        assert!(b.intersects(&a));
+    }
+    #[test]
     fn test_intersects_against_naive() {
         let snapshot = Snapshot::from_lines(EXAMPLE_INPUT.lines());
         for (a, b) in snapshot.bricks.iter().tuple_combinations() {
             assert_eq!(a.intersects(b), a.intersects_naive(b));
+            assert_eq!(b.intersects(a), a.intersects(b))
         }
     }
 
