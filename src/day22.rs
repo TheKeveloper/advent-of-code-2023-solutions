@@ -316,8 +316,10 @@ impl FromStr for Position {
 mod test {
     use std::str::FromStr;
 
+    use itertools::Itertools;
+
     use crate::common::Solution;
-    use crate::day22::{Brick, Day22, Day22P2};
+    use crate::day22::{Brick, Day22, Day22P2, Snapshot};
 
     const EXAMPLE_INPUT: &str = r"1,0,1~1,2,1
 0,0,2~2,0,2
@@ -339,6 +341,14 @@ mod test {
 
         let c = Brick::from_str("1,1,8~1,1,9").unwrap();
         assert!(a.intersects(&c));
+    }
+
+    #[test]
+    fn test_intersects_against_naive() {
+        let snapshot = Snapshot::from_lines(EXAMPLE_INPUT.lines());
+        for (a, b) in snapshot.bricks.iter().tuple_combinations() {
+            assert_eq!(a.intersects(b), a.intersects_naive(b));
+        }
     }
 
     #[test]
