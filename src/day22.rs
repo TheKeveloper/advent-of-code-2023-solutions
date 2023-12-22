@@ -66,16 +66,16 @@ impl Snapshot {
     }
 
     pub fn get_maximal_disintegration_count(&self) -> usize {
-        let supporters = self.get_supporters();
+        let all_supporters = self.get_supporters();
         let mut total: usize = 0;
         for i in 0..self.bricks.len() {
-            let mut supporters = supporters.clone();
+            let mut temp_supporters = all_supporters.clone();
             let mut removed: HashSet<usize> = HashSet::new();
             removed.insert(i);
             loop {
                 let mut new_removed = false;
                 for j in 0..self.bricks.len() {
-                    let supporters = supporters.get_mut(j).unwrap();
+                    let supporters = temp_supporters.get_mut(j).unwrap();
                     let mut any_removed = false;
                     for supporter in supporters.clone().iter() {
                         if removed.contains(supporter) {
