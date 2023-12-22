@@ -20,10 +20,9 @@ impl Solution for Day22 {
 pub enum Day22P2 {}
 impl Solution for Day22P2 {
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
-        panic!(
-            "lines: {:?}",
-            lines.map(|s| s.as_ref().to_string()).collect::<Vec<_>>()
-        )
+        let mut snapshot = Snapshot::from_lines(lines);
+        snapshot.drop_bricks();
+        snapshot.get_maximal_disintegration_count().to_string()
     }
 }
 
@@ -39,8 +38,8 @@ impl Snapshot {
         }
     }
 
-    fn count_sole_supporting(&self) -> usize {
-        let mut supporters: Vec<Vec<usize>> = vec![Vec::new(); self.bricks.len()];
+    fn get_supporters(&self) -> Vec<HashSet<usize>> {
+        let mut supporters: Vec<HashSet<usize>> = vec![HashSet::new(); self.bricks.len()];
 
         for i in 0..self.bricks.len() {
             for j in 0..self.bricks.len() {
@@ -54,17 +53,54 @@ impl Snapshot {
                     .unwrap()
                     .supporting(self.bricks.get(i).unwrap())
                 {
-                    supporters[i].push(j);
+                    supporters[i].insert(j);
                 }
             }
         }
 
         supporters
+    }
+
+    pub fn count_sole_supporting(&self) -> usize {
+        self.get_supporters()
             .iter()
             .filter(|val| val.len() == 1)
-            .map(|vec| vec.first().unwrap())
+            .map(|vec| vec.iter().next().unwrap())
             .unique()
             .count()
+    }
+
+    pub fn get_maximal_disintegration_count(&self) -> usize {
+        let supporters = self.get_supporters();
+        let mut total: usize = 0;
+        for i in 0..self.bricks.len() {
+            let mut supporters = supporters.clone();
+            let mut removed: HashSet<usize> = HashSet::new();
+            removed.insert(i);
+            loop {
+                let mut new_removed = false;
+                for j in 0..self.bricks.len() {
+                    let supporters = supporters.get_mut(j).unwrap();
+                    let mut any_removed = false;
+                    for supporter in supporters.clone().iter() {
+                        if removed.contains(&&supporter) {
+                            supporters.remove(&supporter);
+                            any_removed = true;
+                        }
+                    }
+                    if supporters.is_empty() && any_removed {
+                        removed.insert(j);
+                        new_removed = true;
+                    }
+                }
+                if !new_removed {
+                    break;
+                }
+            }
+            total += removed.len() - 1;
+        }
+
+        total
     }
 
     fn drop_bricks(&mut self) {
@@ -352,8 +388,7 @@ mod test {
     }
 
     #[test]
-    #[should_panic]
     fn test_example_p2() {
-        assert_eq!(Day22P2::solve(EXAMPLE_INPUT.lines()), "")
+        assert_eq!(Day22P2::solve(EXAMPLE_INPUT.lines()), "7")
     }
 }
