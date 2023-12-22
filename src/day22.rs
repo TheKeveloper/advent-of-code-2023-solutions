@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use std::collections::HashSet;
 use std::str::FromStr;
 
 use itertools::Itertools;
@@ -74,7 +75,7 @@ impl Snapshot {
             let lowest_possible = self
                 .bricks
                 .iter()
-                .filter(|&other| other.intersects(brick))
+                .filter(|&other| other.intersects_naive(brick))
                 .filter(|&other| other.ne(brick))
                 .map(|other| other.highest_point())
                 .filter(|&highest_point| highest_point < lowest_point)
@@ -114,7 +115,22 @@ impl Brick {
     }
 
     pub fn supporting(&self, other: &Self) -> bool {
-        self.intersects(other) && self.highest_point() == other.lowest_point() - 1
+        self.intersects_naive(other) && self.highest_point() == other.lowest_point() - 1
+    }
+
+    pub fn intersects_naive(&self, other: &Self) -> bool {
+        let self_cubes: HashSet<_> = self
+            .cubes()
+            .into_iter()
+            .map(|position| position.get_2d())
+            .collect();
+        let other_cubes: HashSet<_> = other
+            .cubes()
+            .into_iter()
+            .map(|position| position.get_2d())
+            .collect();
+
+        self_cubes.intersection(&other_cubes).count() > 0
     }
 
     pub fn intersects(&self, other: &Self) -> bool {
@@ -247,6 +263,12 @@ impl Axis {
     }
 }
 
+#[derive(Clone, Copy, Eq, PartialEq, Hash)]
+struct Position2D {
+    x: i64,
+    y: i64,
+}
+
 impl Position {
     pub fn with_x(&self, new_x: i64) -> Position {
         Position { x: new_x, ..*self }
@@ -265,6 +287,13 @@ impl Position {
             Axis::X => self.x,
             Axis::Y => self.y,
             Axis::Z => self.z,
+        }
+    }
+
+    pub fn get_2d(&self) -> Position2D {
+        Position2D {
+            x: self.x,
+            y: self.y,
         }
     }
 }
