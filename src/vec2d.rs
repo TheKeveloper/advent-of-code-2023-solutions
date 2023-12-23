@@ -81,6 +81,10 @@ impl<T> Vec2d<T> {
         self.inner.get(row).and_then(|row| row.get(col))
     }
 
+    pub fn get_row_col(&self, row_col: &RowCol) -> Option<&T> {
+        self.get(row_col.row, row_col.col)
+    }
+
     pub fn get_mut(&mut self, row: usize, col: usize) -> Option<&mut T> {
         self.inner.get_mut(row).and_then(|row| row.get_mut(col))
     }
