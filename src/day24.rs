@@ -28,7 +28,7 @@ macro_rules! set_view {
 }
 
 impl Solution for Day24P2 {
-    // this is basically totally copied from https://www.reddit.com/r/adventofcode/comments/18pnycy/comment/kepu26z/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
+    // this is basically totally copied from https://www.reddit.com/r/adventofcode/comments/18pnycy/comment/kepu26z
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
         let hailstones = Hailstones::from_lines(lines).hailstones;
         let mut matrix: SMatrix<f64, 6, 6> = Matrix::zero();
