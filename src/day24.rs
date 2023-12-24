@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use itertools::Itertools;
+use nalgebra::Vector3;
 
 use crate::common::Solution;
 
@@ -64,8 +65,8 @@ impl Hailstones {
 }
 
 struct PositionVelocity {
-    position: Vector3,
-    velocity: Vector3,
+    position: Vector3<f64>,
+    velocity: Vector3<f64>,
 }
 
 impl PositionVelocity {
@@ -89,7 +90,7 @@ impl PositionVelocity {
         ))
     }
 
-    pub fn y_intercept(&self) -> Vector3 {
+    pub fn y_intercept(&self) -> Vector3<f64> {
         let time = -self.position.x / self.velocity.x;
         self.position_at_time(time)
     }
@@ -98,23 +99,17 @@ impl PositionVelocity {
         self.velocity.y / self.velocity.x
     }
 
-    pub fn position_at_time(&self, time: f64) -> Vector3 {
-        Vector3 {
-            x: self.position.x + self.velocity.x * time,
-            y: self.position.y + self.velocity.y * time,
-            z: self.position.z + self.velocity.z * time,
-        }
+    pub fn position_at_time(&self, time: f64) -> Vector3<f64> {
+        Vector3::new(
+            self.position.x + self.velocity.x * time,
+            self.position.y + self.velocity.y * time,
+            self.position.z + self.velocity.z * time,
+        )
     }
 
     fn time_until_x_value(&self, x_position: f64) -> f64 {
         (x_position - self.position.x) / self.velocity.x
     }
-}
-
-struct Vector3 {
-    x: f64,
-    y: f64,
-    z: f64,
 }
 
 impl FromStr for PositionVelocity {
@@ -141,16 +136,16 @@ impl FromStr for PositionVelocity {
         };
 
         Ok(PositionVelocity {
-            position: Vector3 {
-                x: px.trim().parse()?,
-                y: py.trim().parse()?,
-                z: pz.trim().parse()?,
-            },
-            velocity: Vector3 {
-                x: vx.trim().parse()?,
-                y: vy.trim().parse()?,
-                z: vz.trim().parse()?,
-            },
+            position: Vector3::<f64>::new(
+                px.trim().parse()?,
+                py.trim().parse()?,
+                pz.trim().parse()?,
+            ),
+            velocity: Vector3::<f64>::new(
+                vx.trim().parse()?,
+                vy.trim().parse()?,
+                vz.trim().parse()?,
+            ),
         })
     }
 }
