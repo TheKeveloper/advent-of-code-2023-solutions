@@ -1,4 +1,6 @@
+use std::cell::RefCell;
 use std::collections::HashSet;
+use std::rc::Rc;
 
 use crate::common::Solution;
 use crate::vec2d::{Cell, Direction, RowCol, Vec2d};
@@ -15,10 +17,8 @@ impl Solution for Day23 {
 pub enum Day23P2 {}
 impl Solution for Day23P2 {
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
-        panic!(
-            "lines: {:?}",
-            lines.map(|s| s.as_ref().to_string()).collect::<Vec<_>>()
-        )
+        let trail = Trail::from_lines(lines);
+        trail.get_max_path_p2().to_string()
     }
 }
 
@@ -58,15 +58,66 @@ impl Trail {
             return 0;
         };
 
+        if cell.is_end() {
+            return 0;
+        }
+
         cell.next_tiles()
             .into_iter()
             .filter(|coords| !&visited.contains(coords))
-            .map(|coords| self.tiles.get_cell(coords.row, coords.col))
-            .flatten()
+            .flat_map(|coords| self.tiles.get_cell(coords.row, coords.col))
             .map(|cell| self.get_max_path_inner(&cell.coords(), visited.clone()))
             .max()
             .map(|val| val + 1)
             .unwrap_or(0)
+    }
+
+    pub fn get_max_path_p2(&self) -> usize {
+        self.get_max_path_inner_p2(&self.get_start(), HashSet::new())
+            .unwrap()
+    }
+
+    fn get_max_path_inner_p2(&self, start: &RowCol, mut visited: HashSet<RowCol>) -> Option<usize> {
+        let Some(cell) = self.tiles.get_cell(start.row, start.col) else {
+            return None;
+        };
+
+        if cell.is_end() {
+            return Some(0);
+        }
+
+        if !visited.insert(start.clone()) {
+            return None;
+        }
+        let next_tiles = cell.next_tiles_p2();
+
+        if next_tiles.len() == 2 {
+            let Some(next_cell) = cell
+                .next_tiles_p2()
+                .into_iter()
+                .filter(|coords| !visited.contains(coords))
+                .flat_map(|coords| self.tiles.get_cell(coords.row, coords.col))
+                .next()
+            else {
+                return None;
+            };
+
+            let result = self
+                .get_max_path_inner_p2(&next_cell.coords(), visited.clone())
+                .map(|x| x + 1);
+            return result;
+        }
+
+        let result = cell
+            .next_tiles_p2()
+            .into_iter()
+            .filter(|coords| !visited.contains(coords))
+            .flat_map(|coords| self.tiles.get_cell(coords.row, coords.col))
+            .map(|cell| self.get_max_path_inner_p2(&cell.coords(), visited.clone()))
+            .flatten()
+            .max()
+            .map(|val| val + 1);
+        result
     }
 }
 
@@ -104,6 +155,17 @@ impl<'a> Cell<'a, Tile> {
                 .next(self.coords())
                 .into_iter()
                 .filter(|coords| self.parent.get_row_col(coords).is_some())
+                .collect(),
+        }
+    }
+
+    pub fn next_tiles_p2(&self) -> Vec<RowCol> {
+        match self.value() {
+            Tile::Forest => unreachable!(),
+            Tile::Empty | Tile::Slope(_) => self
+                .cardinal_neighbors()
+                .filter(|cell| !cell.is_forest())
+                .map(|cell| cell.coords())
                 .collect(),
         }
     }
@@ -157,8 +219,7 @@ mod test {
     }
 
     #[test]
-    #[should_panic]
     fn test_example_p2() {
-        assert_eq!(Day23P2::solve(EXAMPLE_INPUT.lines()), "")
+        assert_eq!(Day23P2::solve(EXAMPLE_INPUT.lines()), "154")
     }
 }
