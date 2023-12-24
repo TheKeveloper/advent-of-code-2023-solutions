@@ -73,11 +73,18 @@ impl Trail {
     }
 
     pub fn get_max_path_p2(&self) -> usize {
-        self.get_max_path_inner_p2(&self.get_start(), HashSet::new())
-            .unwrap()
+        self.get_max_path_inner_p2(
+            &self.get_start(),
+            Rc::new(RefCell::new(self.tiles.map(|_| false))),
+        )
+        .unwrap()
     }
 
-    fn get_max_path_inner_p2(&self, start: &RowCol, mut visited: HashSet<RowCol>) -> Option<usize> {
+    fn get_max_path_inner_p2(
+        &self,
+        start: &RowCol,
+        visited: Rc<RefCell<Vec2d<bool>>>,
+    ) -> Option<usize> {
         let Some(cell) = self.tiles.get_cell(start.row, start.col) else {
             return None;
         };
@@ -86,37 +93,26 @@ impl Trail {
             return Some(0);
         }
 
-        if !visited.insert(start.clone()) {
-            return None;
-        }
-        let next_tiles = cell.next_tiles_p2();
-
-        if next_tiles.len() == 2 {
-            let Some(next_cell) = cell
-                .next_tiles_p2()
-                .into_iter()
-                .filter(|coords| !visited.contains(coords))
-                .flat_map(|coords| self.tiles.get_cell(coords.row, coords.col))
-                .next()
-            else {
+        {
+            let mut visited = visited.borrow_mut();
+            let cur_visited = visited.get_mut(start.row, start.col).unwrap();
+            if *cur_visited {
                 return None;
-            };
-
-            let result = self
-                .get_max_path_inner_p2(&next_cell.coords(), visited.clone())
-                .map(|x| x + 1);
-            return result;
+            } else {
+                *cur_visited = true;
+            }
         }
 
         let result = cell
             .next_tiles_p2()
             .into_iter()
-            .filter(|coords| !visited.contains(coords))
+            .filter(|coords| !visited.borrow().get_row_col(coords).unwrap())
             .flat_map(|coords| self.tiles.get_cell(coords.row, coords.col))
             .map(|cell| self.get_max_path_inner_p2(&cell.coords(), visited.clone()))
             .flatten()
             .max()
             .map(|val| val + 1);
+        *visited.borrow_mut().get_mut(start.row, start.col).unwrap() = false;
         result
     }
 }
