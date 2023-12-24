@@ -1,7 +1,8 @@
 use std::str::FromStr;
 
 use itertools::Itertools;
-use nalgebra::Vector3;
+use nalgebra::{Matrix, SMatrix, Vector3, Vector6};
+use num::Zero;
 
 use crate::common::Solution;
 
@@ -17,12 +18,56 @@ impl Solution for Day24 {
 }
 
 pub enum Day24P2 {}
+
+macro_rules! set_view {
+    ($view:expr, $other:expr) => {
+        for row in 0..$other.nrows() {
+            $view.set_row(row, &$other.row(row));
+        }
+    };
+}
+
 impl Solution for Day24P2 {
+    // this is basically totally copied from https://www.reddit.com/r/adventofcode/comments/18pnycy/comment/kepu26z/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
     fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
-        panic!(
-            "lines: {:?}",
-            lines.map(|s| s.as_ref().to_string()).collect::<Vec<_>>()
-        )
+        let hailstones = Hailstones::from_lines(lines).hailstones;
+        let mut matrix: SMatrix<f64, 6, 6> = Matrix::zero();
+        let mut rhs: Vector6<f64> = Matrix::zero();
+        *rhs.fixed_rows_mut::<3>(0) = *(-hailstones[0].position.cross(&hailstones[0].velocity)
+            + hailstones[1].position.cross(&hailstones[1].velocity));
+
+        *rhs.fixed_rows_mut::<3>(3) = *(-hailstones[0].position.cross(&hailstones[0].velocity)
+            + hailstones[2].position.cross(&hailstones[2].velocity));
+        {
+            let mut view = matrix.fixed_view_mut::<3, 3>(0, 0);
+            let values: SMatrix<f64, 3, 3> =
+                hailstones[0].velocity.cross_matrix() - hailstones[1].velocity.cross_matrix();
+            set_view!(view, values);
+        }
+        {
+            let mut view = matrix.fixed_view_mut::<3, 3>(3, 0);
+            let values: SMatrix<f64, 3, 3> =
+                hailstones[0].velocity.cross_matrix() - hailstones[2].velocity.cross_matrix();
+            set_view!(view, values);
+        }
+        {
+            let mut view = matrix.fixed_view_mut::<3, 3>(0, 3);
+            let values: SMatrix<f64, 3, 3> =
+                -hailstones[0].position.cross_matrix() + hailstones[1].position.cross_matrix();
+            set_view!(view, values);
+        }
+
+        {
+            let mut view = matrix.fixed_view_mut::<3, 3>(3, 3);
+            let values: SMatrix<f64, 3, 3> =
+                -hailstones[0].position.cross_matrix() + hailstones[2].position.cross_matrix();
+            set_view!(view, values);
+        }
+
+        let result = matrix.try_inverse().unwrap() * rhs;
+        let position: Vector3<f64> = Vector3::new(result.x, result.y, result.z);
+
+        (position.x + position.y + position.z).round().to_string()
     }
 }
 
@@ -172,8 +217,7 @@ mod test {
     }
 
     #[test]
-    #[should_panic]
     fn test_example_p2() {
-        assert_eq!(Day24P2::solve(EXAMPLE_INPUT.lines()), "")
+        assert_eq!(Day24P2::solve(EXAMPLE_INPUT.lines()), "47")
     }
 }
