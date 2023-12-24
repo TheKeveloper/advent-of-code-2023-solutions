@@ -109,10 +109,6 @@ impl PositionVelocity {
     fn time_until_x_value(&self, x_position: f64) -> f64 {
         (x_position - self.position.x) / self.velocity.x
     }
-
-    fn time_until_y_value(&self, y_position: f64) -> f64 {
-        (y_position - self.position.y) / self.velocity.y
-    }
 }
 
 struct Vector3 {
