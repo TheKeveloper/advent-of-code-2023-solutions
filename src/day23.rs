@@ -50,7 +50,7 @@ impl Trail {
     }
 
     fn get_max_path_inner(&self, start: &RowCol, mut visited: HashSet<RowCol>) -> usize {
-        if !visited.insert(start.clone()) {
+        if !visited.insert(*start) {
             return 0;
         }
 
@@ -108,8 +108,7 @@ impl Trail {
             .into_iter()
             .filter(|coords| !visited.borrow().get_row_col(coords).unwrap())
             .flat_map(|coords| self.tiles.get_cell(coords.row, coords.col))
-            .map(|cell| self.get_max_path_inner_p2(&cell.coords(), visited.clone()))
-            .flatten()
+            .filter_map(|cell| self.get_max_path_inner_p2(&cell.coords(), visited.clone()))
             .max()
             .map(|val| val + 1);
         *visited.borrow_mut().get_mut(start.row, start.col).unwrap() = false;
