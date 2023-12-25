@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -154,13 +155,15 @@ impl SuperNodeCollection {
         let first_rank = self.nodes.get(first.as_ref()).unwrap().rank;
         let second_rank = self.nodes.get(second.as_ref()).unwrap().rank;
 
-        if first_rank < second_rank {
-            self.nodes.get_mut(first.as_ref()).unwrap().parent = second.clone();
-        } else if first_rank > second_rank {
-            self.nodes.get_mut(second.as_ref()).unwrap().parent = first.clone();
-        } else {
-            self.nodes.get_mut(second.as_ref()).unwrap().parent = first.clone();
-            self.nodes.get_mut(first.as_str()).unwrap().rank += 1;
+        match first_rank.cmp(&second_rank) {
+            Ordering::Less => self.nodes.get_mut(first.as_ref()).unwrap().parent = second.clone(),
+            Ordering::Greater => {
+                self.nodes.get_mut(second.as_ref()).unwrap().parent = first.clone()
+            }
+            Ordering::Equal => {
+                self.nodes.get_mut(second.as_ref()).unwrap().parent = first.clone();
+                self.nodes.get_mut(first.as_str()).unwrap().rank += 1;
+            }
         }
     }
 }

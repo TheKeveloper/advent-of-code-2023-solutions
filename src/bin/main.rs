@@ -22,7 +22,7 @@ use advent_of_code_2023_solutions::day21::{Day21, Day21P2};
 use advent_of_code_2023_solutions::day22::{Day22, Day22P2};
 use advent_of_code_2023_solutions::day23::{Day23, Day23P2};
 use advent_of_code_2023_solutions::day24::{Day24, Day24P2};
-use advent_of_code_2023_solutions::day25::{Day25, Day25P2};
+use advent_of_code_2023_solutions::day25::Day25;
 use advent_of_code_2023_solutions::day3::{Day3, Day3P2};
 use advent_of_code_2023_solutions::day4::{Day4, Day4P2};
 use advent_of_code_2023_solutions::day5::{Day5, Day5P2};
