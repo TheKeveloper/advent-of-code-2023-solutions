@@ -89,7 +89,6 @@ fn main() {
         (24, 1) => Day24::solve(lines),
         (24, 2) => Day24P2::solve(lines),
         (25, 1) => Day25::solve(lines),
-        (25, 2) => Day25P2::solve(lines),
         _ => unimplemented!(),
     };
     println!("{}", result)

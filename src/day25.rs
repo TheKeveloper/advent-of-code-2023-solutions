@@ -15,24 +15,14 @@ impl Solution for Day25 {
         let graph = Graph::from_lines(lines);
         let mut rng = StdRng::seed_from_u64(1);
         loop {
-            let result = graph.karger(&mut rng);
+            let result = graph.clone().karger(&mut rng);
             if result.remaining_edges.len() == 3 {
                 return (result.partitions.0.len() * result.partitions.1.len()).to_string();
             }
         }
     }
 }
-
-pub enum Day25P2 {}
-impl Solution for Day25P2 {
-    fn solve(lines: impl Iterator<Item = impl AsRef<str>>) -> String {
-        panic!(
-            "lines: {:?}",
-            lines.map(|s| s.as_ref().to_string()).collect::<Vec<_>>()
-        )
-    }
-}
-
+#[derive(Clone)]
 struct Graph {
     edges: Vec<Edge>,
 }
@@ -72,35 +62,16 @@ impl Graph {
         let mut num_nodes = supernodes.nodes.len();
 
         for edge in &shuffled_edges {
-            let partitions: Vec<Vec<String>> = self
-                .get_nodes()
-                .into_iter()
-                .group_by(|node| supernodes.find_root(node.as_str()).as_str().to_string())
-                .into_iter()
-                .map(|(_, group)| group.collect())
-                .collect();
-            if num_nodes == 2 && partitions.len() <= 2 {
+            if num_nodes == 2 {
                 break;
             }
-            let first = supernodes.find_root(edge.0.as_str());
-            let second = supernodes.find_root(edge.1.as_str());
+            let first = supernodes.find_root_compacting(edge.0.as_str());
+            let second = supernodes.find_root_compacting(edge.1.as_str());
             if first.as_str().eq_ignore_ascii_case(second.as_str()) {
-                println!("Found same edge");
                 continue;
             }
 
             supernodes.union(first.as_str(), second.as_str());
-            let after_partitions: Vec<Vec<String>> = self
-                .get_nodes()
-                .into_iter()
-                .group_by(|node| supernodes.find_root(node.as_str()).as_str().to_string())
-                .into_iter()
-                .map(|(_, group)| group.collect())
-                .collect();
-
-            if after_partitions.len() != partitions.len() - 1 {
-                panic!("Got part")
-            }
             num_nodes -= 1;
         }
         debug_assert_eq!(num_nodes, 2);
@@ -109,27 +80,30 @@ impl Graph {
             .edges
             .iter()
             .filter(|edge| {
-                let first = supernodes.find_root(edge.0.as_str());
-                let second = supernodes.find_root(edge.1.as_str());
+                let first = supernodes.find_root_compacting(edge.0.as_str());
+                let second = supernodes.find_root_compacting(edge.1.as_str());
                 first.as_str().ne(second.as_str())
             })
             .cloned()
             .collect();
 
-        let partitions: Vec<Vec<String>> = self
+        let partitions: HashMap<String, Vec<String>> = self
             .get_nodes()
             .into_iter()
-            .group_by(|node| supernodes.find_root(node.as_str()).as_str().to_string())
-            .into_iter()
-            .map(|(_, group)| group.collect())
-            .collect();
+            .into_group_map_by(|node| supernodes.find_root(node.as_str()).as_str().to_string());
 
-        let [first, second] = partitions.as_slice() else {
+        if partitions.len() != 2 {
+            panic!("Did not receive exactly two partitions: {:?}", partitions);
+        }
+
+        let partition_values = partitions.values().collect::<Vec<_>>();
+
+        let [first, second] = partition_values.as_slice() else {
             panic!("Did not receive exactly two groups: {:?}", partitions);
         };
 
         KargerResult {
-            partitions: (first.clone(), second.clone()),
+            partitions: ((*first).clone(), (*second).clone()),
             remaining_edges,
         }
     }
@@ -154,20 +128,28 @@ struct SuperNodeCollection {
 }
 
 impl SuperNodeCollection {
-    pub fn find_root(&mut self, name: &str) -> Rc<String> {
+    pub fn find_root_compacting(&mut self, name: &str) -> Rc<String> {
         let node_parent = self.nodes.get(name).unwrap().parent.clone();
         if node_parent.as_str().eq_ignore_ascii_case(name) {
             return node_parent;
         }
-        let root = self.find_root(node_parent.as_str());
+        let root = self.find_root_compacting(node_parent.as_str());
         let node = self.nodes.get_mut(name).unwrap();
         node.parent = root.clone();
         root
     }
 
+    pub fn find_root(&self, name: &str) -> Rc<String> {
+        let node_parent = self.nodes.get(name).unwrap().parent.clone();
+        if node_parent.as_str().eq_ignore_ascii_case(name) {
+            return node_parent;
+        }
+        self.find_root(node_parent.as_str())
+    }
+
     pub fn union(&mut self, first: &str, second: &str) {
-        let first = self.find_root(first);
-        let second = self.find_root(second);
+        let first = self.find_root_compacting(first);
+        let second = self.find_root_compacting(second);
 
         let first_rank = self.nodes.get(first.as_ref()).unwrap().rank;
         let second_rank = self.nodes.get(second.as_ref()).unwrap().rank;
@@ -206,7 +188,7 @@ impl Edge {
 #[cfg(test)]
 mod test {
     use crate::common::Solution;
-    use crate::day25::{Day25, Day25P2};
+    use crate::day25::Day25;
 
     const EXAMPLE_INPUT: &str = r"jqt: rhn xhk nvd
 rsh: frs pzl lsr
@@ -224,11 +206,5 @@ frs: qnr lhk lsr";
     #[test]
     fn test_example() {
         assert_eq!(Day25::solve(EXAMPLE_INPUT.lines()), "54")
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_example_p2() {
-        assert_eq!(Day25P2::solve(EXAMPLE_INPUT.lines()), "")
     }
 }
